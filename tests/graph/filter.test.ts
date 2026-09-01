@@ -27,7 +27,7 @@ describe('projectRoadmap', () => {
     expect(p.edges.some((e) => e.from === 'EP-3' || e.to === 'EP-3')).toBe(false);
     expect(p.edges.some((e) => e.from === 'EXT-11')).toBe(false);
     // Unaffected edges survive.
-    expect(p.edges).toContainEqual({ from: 'EP-2', to: 'EP-5' });
+    expect(p.edges).toContainEqual({ from: 'EP-2', to: 'EP-5', kind: 'depend' });
   });
 
   it('never hides the root even when it is resolved', () => {
@@ -39,7 +39,12 @@ describe('projectRoadmap', () => {
   });
 
   it('keeps only visible orphans', () => {
-    const withResolvedOrphan: Roadmap = { ...roadmap, nodes: new Map(roadmap.nodes) };
+    // The fixture epic produces no orphans, so the ids are set by hand here.
+    const withResolvedOrphan: Roadmap = {
+      ...roadmap,
+      nodes: new Map(roadmap.nodes),
+      orphanIds: ['EP-1', 'EP-6', 'EP-9'],
+    };
     withResolvedOrphan.nodes.set('EP-6', { ...roadmap.nodes.get('EP-6')!, resolved: true });
     const p = projectRoadmap(withResolvedOrphan, { showResolved: false });
     expect(p.orphanIds).toEqual(['EP-1', 'EP-9']);

@@ -5,6 +5,7 @@ import {
   linkedIds,
   toRoadmapNode,
   issueUrl,
+  type EdgeKind,
   type NodeKind,
   type Roadmap,
   type RoadmapEdge,
@@ -150,22 +151,29 @@ class Collector {
 }
 
 function buildEdges(collector: Collector, nodeIds: Set<string>): RoadmapEdge[] {
-  const seen = new Set<string>();
-  const edges: RoadmapEdge[] = [];
-  const add = (from: string, to: string): void => {
+  const byKey = new Map<string, RoadmapEdge>();
+  const add = (from: string, to: string, kind: EdgeKind): void => {
     if (!nodeIds.has(from) || !nodeIds.has(to) || from === to) return;
     const key = `${from}>${to}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    edges.push({ from, to });
+    const existing = byKey.get(key);
+    // An explicit dependency outranks the implicit hierarchy edge for the same pair.
+    if (existing && !(existing.kind === 'subtask' && kind === 'depend')) return;
+    byKey.set(key, { from, to, kind });
   };
   for (const id of nodeIds) {
     const dto = collector.dto(id);
     if (!dto) continue;
-    for (const prerequisite of linkedIds(dto, 'Depend', 'INWARD')) add(prerequisite, id);
-    for (const dependent of linkedIds(dto, 'Depend', 'OUTWARD')) add(id, dependent);
+    for (const prerequisite of linkedIds(dto, 'Depend', 'INWARD')) add(prerequisite, id, 'depend');
+    for (const dependent of linkedIds(dto, 'Depend', 'OUTWARD')) add(id, dependent, 'depend');
+    /*
+     * A parent depends on all of its subtasks. Both ends of the hierarchy are read so the
+     * edge survives when one of them is an inaccessible "(no access)" placeholder, which
+     * has no links of its own.
+     */
+    for (const child of linkedIds(dto, 'Subtask', 'OUTWARD')) add(child, id, 'subtask');
+    for (const parent of linkedIds(dto, 'Subtask', 'INWARD')) add(id, parent, 'subtask');
   }
-  return edges;
+  return [...byKey.values()];
 }
 
 export function findCycles(nodeIds: Iterable<string>, edges: RoadmapEdge[]): string[][] {

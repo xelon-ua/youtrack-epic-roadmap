@@ -23,6 +23,12 @@ describe('layoutRoadmap', () => {
     expect(x(r, 'EP-4')).toBeLessThan(x(r, 'OUT-20'));
   });
 
+  it('places a parent to the right of all of its subtasks', () => {
+    const r = layoutRoadmap(projectRoadmap(roadmap, { showResolved: true }));
+    for (const child of ['EP-3', 'EP-4']) expect(x(r, child), child).toBeLessThan(x(r, 'EP-2'));
+    for (const child of ['EP-2', 'EP-5', 'EP-6', 'EP-9']) expect(x(r, child), child).toBeLessThan(x(r, 'EP-1'));
+  });
+
   it('positions every visible node exactly once', () => {
     const p = projectRoadmap(roadmap, { showResolved: true });
     const r = layoutRoadmap(p);
@@ -30,13 +36,20 @@ describe('layoutRoadmap', () => {
   });
 
   it('puts orphans in a lane below the main graph', () => {
-    const p = projectRoadmap(roadmap, { showResolved: true });
+    // The fixture epic has no orphans any more (every subtask is linked to its parent),
+    // so the lane geometry is pinned on a hand-built projection.
+    const p: RoadmapProjection = {
+      rootId: 'EP-1',
+      nodes: [roadmap.nodes.get('EP-3')!, roadmap.nodes.get('EP-4')!, roadmap.nodes.get('EP-6')!],
+      edges: [{ from: 'EP-3', to: 'EP-4', kind: 'depend' }],
+      orphanIds: ['EP-6'],
+      hiddenCount: 0,
+    };
     const r = layoutRoadmap(p);
-    const mainIds = p.nodes.map((n) => n.id).filter((id) => !p.orphanIds.includes(id));
-    const mainBottom = Math.max(...mainIds.map((id) => y(r, id))) + NODE_HEIGHT;
+    const mainBottom = Math.max(y(r, 'EP-3'), y(r, 'EP-4')) + NODE_HEIGHT;
     expect(r.orphanLane).not.toBeNull();
     expect(r.orphanLane!.y).toBeGreaterThan(mainBottom);
-    for (const id of p.orphanIds) expect(y(r, id)).toBeGreaterThan(r.orphanLane!.y);
+    expect(y(r, 'EP-6')).toBeGreaterThan(r.orphanLane!.y);
   });
 
   it('moves a node to the first layer once its only prerequisite is hidden', () => {

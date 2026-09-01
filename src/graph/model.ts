@@ -28,10 +28,17 @@ export interface RoadmapNode {
   url: string;
 }
 
+/**
+ * How an edge was derived: an explicit Depend link, or the implicit rule that a parent
+ * issue is only finished once every one of its subtasks is.
+ */
+export type EdgeKind = 'depend' | 'subtask';
+
 /** prerequisite → dependent */
 export interface RoadmapEdge {
   from: string;
   to: string;
+  kind: EdgeKind;
 }
 
 export interface Roadmap {

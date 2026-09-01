@@ -51,18 +51,48 @@ describe('collectRoadmap', () => {
 
   it('builds prerequisite → dependent edges without duplicates', async () => {
     const { roadmap } = await build();
-    expect(edgeKeys(roadmap.edges)).toEqual(
+    expect(edgeKeys(roadmap.edges.filter((e) => e.kind === 'depend'))).toEqual(
       ['EP-3>EP-4', 'EP-3>EP-5', 'EP-2>EP-5', 'EXT-10>EP-2', 'EXT-11>EXT-10', 'EP-4>OUT-20', 'EP-7>EP-8', 'EP-8>EP-7'].sort(),
     );
   });
 
-  it('lists orphans (root first) and keeps inaccessible children as placeholders', async () => {
+  it('makes a parent depend on every subtask, including inaccessible ones', async () => {
     const { roadmap } = await build();
-    expect(roadmap.orphanIds).toEqual(['EP-1', 'EP-6', 'EP-9']);
+    expect(edgeKeys(roadmap.edges.filter((e) => e.kind === 'subtask'))).toEqual(
+      ['EP-2>EP-1', 'EP-5>EP-1', 'EP-6>EP-1', 'EP-7>EP-1', 'EP-8>EP-1', 'EP-9>EP-1', 'EP-3>EP-2', 'EP-4>EP-2'].sort(),
+    );
+  });
+
+  it('ignores subtasks that were never collected', async () => {
+    const { roadmap } = await build();
+    // EXT-12 is a subtask of the external prerequisite EXT-10 and is out of scope.
+    expect(roadmap.edges.some((e) => e.from === 'EXT-12' || e.to === 'EXT-12')).toBe(false);
+  });
+
+  it('prefers an explicit dependency over the implicit subtask edge', async () => {
+    // P-2 is a subtask of P-1 and is also explicitly marked as required for it.
+    const issues = {
+      'P-1': makeIssue('P-1', { links: [link('Subtask', 'OUTWARD', 'P-2'), link('Depend', 'INWARD', 'P-2')] }),
+      'P-2': makeIssue('P-2', { links: [link('Subtask', 'INWARD', 'P-1'), link('Depend', 'OUTWARD', 'P-1')] }),
+    };
+    const roadmap = await collectRoadmap('P-1', createFixtureFetch(issues).fetchIssue, { baseUrl: BASE });
+    expect(roadmap.edges).toEqual([{ from: 'P-2', to: 'P-1', kind: 'depend' }]);
+  });
+
+  it('leaves no issue of the epic tree unconnected and keeps inaccessible children as placeholders', async () => {
+    const { roadmap } = await build();
+    expect(roadmap.orphanIds).toEqual([]);
     const noAccess = roadmap.nodes.get('EP-9')!;
     expect(noAccess.summary).toBe('(no access)');
     expect(noAccess.kind).toBe('epic');
     expect(noAccess.state).toBeNull();
+  });
+
+  it('lists a root without subtasks or dependencies as an orphan', async () => {
+    const { fetchIssue } = createFixtureFetch({ 'S-1': makeIssue('S-1') });
+    const roadmap = await collectRoadmap('S-1', fetchIssue, { baseUrl: BASE });
+    expect(roadmap.orphanIds).toEqual(['S-1']);
+    expect(roadmap.edges).toEqual([]);
   });
 
   it('detects dependency cycles', async () => {
@@ -115,6 +145,6 @@ describe('collectRoadmap', () => {
     const roadmap = await collectRoadmap('R-1', fetchIssue, { baseUrl: BASE });
     expect(roadmap.nodes.get('X-1')!.kind).toBe('external-prerequisite');
     expect(roadmap.nodes.get('R-3')!.kind).toBe('epic');
-    expect(edgeKeys(roadmap.edges)).toEqual(['R-2>R-3', 'R-3>X-1', 'X-1>R-2'].sort());
+    expect(edgeKeys(roadmap.edges)).toEqual(['R-2>R-3', 'R-3>X-1', 'X-1>R-2', 'R-2>R-1', 'R-3>R-1'].sort());
   });
 });
