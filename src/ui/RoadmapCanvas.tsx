@@ -29,6 +29,9 @@ const nodeTypes: NodeTypes = { issue: IssueNode, lane: LaneLabel };
 
 const EDGE_IDLE = '#9ca3af';
 const EDGE_ACTIVE = '#2563eb';
+/* Hierarchy edges are inferred, not links the user drew, so they stay quieter. */
+const EDGE_SUBTASK_IDLE = '#d1d5db';
+const EDGE_SUBTASK_DASH = '6 4';
 
 export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; showResolved: boolean }) {
   const hoveredId = useHoverStore((s) => s.hoveredId);
@@ -76,14 +79,19 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
     () =>
       projection.edges.map((e) => {
         const active = hoveredId !== null && (e.from === hoveredId || e.to === hoveredId);
-        const color = active ? EDGE_ACTIVE : EDGE_IDLE;
+        const hierarchy = e.kind === 'subtask';
+        const color = active ? EDGE_ACTIVE : hierarchy ? EDGE_SUBTASK_IDLE : EDGE_IDLE;
         return {
           id: `${e.from}>${e.to}`,
           source: e.from,
           target: e.to,
           markerEnd: { type: MarkerType.ArrowClosed, color },
-          style: { stroke: color, strokeWidth: active ? 2.5 : 1.5 },
-          animated: active,
+          style: {
+            stroke: color,
+            strokeWidth: active ? 2.5 : 1.5,
+            ...(hierarchy ? { strokeDasharray: EDGE_SUBTASK_DASH } : {}),
+          },
+          animated: active && !hierarchy,
         };
       }),
     [projection, hoveredId],

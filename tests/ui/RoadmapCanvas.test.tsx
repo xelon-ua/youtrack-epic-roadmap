@@ -1,6 +1,6 @@
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Node } from '@xyflow/react';
+import type { Edge, Node } from '@xyflow/react';
 
 /*
  * React Flow keeps a node's measured size only while the node object stays referentially
@@ -14,14 +14,16 @@ import type { Node } from '@xyflow/react';
 
 interface Captured {
   nodes: Node[];
+  edges: Edge[];
   onNodeMouseEnter?: (event: unknown, node: Node) => void;
   onNodeMouseLeave?: (event: unknown, node: Node) => void;
 }
-const captured: Captured = { nodes: [] };
+const captured: Captured = { nodes: [], edges: [] };
 
 vi.mock('@xyflow/react', () => ({
   ReactFlow: (props: Captured & { children?: React.ReactNode }) => {
     captured.nodes = props.nodes;
+    captured.edges = props.edges;
     captured.onNodeMouseEnter = props.onNodeMouseEnter;
     captured.onNodeMouseLeave = props.onNodeMouseLeave;
     return <div data-testid="react-flow">{props.children}</div>;
@@ -50,6 +52,7 @@ beforeEach(async () => {
   const { fetchIssue } = createFixtureFetch();
   roadmap = await collectRoadmap('EP-1', fetchIssue, { baseUrl: 'https://yt.example' });
   captured.nodes = [];
+  captured.edges = [];
 });
 
 const byId = (nodes: Node[]): Map<string, Node> => new Map(nodes.map((n) => [n.id, n]));
@@ -78,6 +81,26 @@ describe('RoadmapCanvas', () => {
     for (const [id, node] of byId(captured.nodes)) {
       expect(node, `node ${id} was rebuilt on hover out`).toBe(before.get(id));
     }
+  });
+
+  it('draws implicit subtask edges dashed and explicit dependencies solid', () => {
+    render(<RoadmapCanvas roadmap={roadmap} showResolved />);
+    const byEdgeId = new Map(captured.edges.map((e) => [e.id, e]));
+
+    const subtask = byEdgeId.get('EP-4>EP-2');
+    expect(subtask, 'subtask edge EP-4 → EP-2 is missing').toBeDefined();
+    expect(subtask!.style?.strokeDasharray).toBeTruthy();
+
+    const depend = byEdgeId.get('EP-3>EP-4');
+    expect(depend, 'dependency edge EP-3 → EP-4 is missing').toBeDefined();
+    expect(depend!.style?.strokeDasharray).toBeUndefined();
+  });
+
+  it('highlights a hovered card together with its subtask edges', () => {
+    render(<RoadmapCanvas roadmap={roadmap} showResolved />);
+    const idle = captured.edges.find((e) => e.id === 'EP-4>EP-2')!.style?.stroke;
+    act(() => captured.onNodeMouseEnter?.({}, { id: 'EP-2', type: 'issue' } as Node));
+    expect(captured.edges.find((e) => e.id === 'EP-4>EP-2')!.style?.stroke).not.toBe(idle);
   });
 
   it('declares the fixed card size on issue nodes so they render before being measured', () => {

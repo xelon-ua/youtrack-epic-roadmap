@@ -36,7 +36,9 @@ export function Legend() {
         <div>Fill and stripe = YouTrack state colour.</div>
       )}
       <div className="mt-1">Resolved issues are faded.</div>
-      <div>Arrow: prerequisite → dependent. Click a card to open the issue.</div>
+      <div>Solid arrow: prerequisite → dependent.</div>
+      <div>Dashed arrow: subtask → parent (a parent needs all of its subtasks).</div>
+      <div>Click a card to open the issue.</div>
     </div>
   );
 }

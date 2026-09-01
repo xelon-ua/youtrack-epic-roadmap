@@ -16,6 +16,12 @@ describe('Legend', () => {
     expect(screen.getByText('Prerequisite outside the epic')).toBeInTheDocument();
   });
 
+  it('explains both arrow styles', () => {
+    render(<Legend />);
+    expect(screen.getByText(/prerequisite → dependent/i)).toBeInTheDocument();
+    expect(screen.getByText(/subtask → parent/i)).toBeInTheDocument();
+  });
+
   it('lists every status bucket in the semantic scheme', () => {
     render(<Legend />);
     for (const bucket of BUCKET_ORDER) {

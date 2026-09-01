@@ -7,9 +7,9 @@ Single-page app, no backend. Everything below runs in the browser.
 | Module | Responsibility |
 |---|---|
 | `src/api/` | Typed `fetch` wrapper over YouTrack REST; maps HTTP/CORS failures to error classes. |
-| `src/graph/collect.ts` | BFS that builds the roadmap: epic tree (Subtask, recursive) → external prerequisites (Depend "depends on", recursive) → external dependents (Depend "is required for", one level). Concurrency 6, soft cap 500 issues. |
+| `src/graph/collect.ts` | BFS that builds the roadmap: epic tree (Subtask, recursive) → external prerequisites (Depend "depends on", recursive) → external dependents (Depend "is required for", one level). Emits both Depend edges and implicit subtask → parent edges. Concurrency 6, soft cap 500 issues. |
 | `src/graph/filter.ts` | Projection that hides resolved issues (root always kept); no bridging edges, so a node whose prerequisites are all resolved moves to layer 0. |
-| `src/graph/layout.ts` | `dagre` left-to-right layout; orphans (epic issues without any Depend link) go to a separate lane below. |
+| `src/graph/layout.ts` | `dagre` left-to-right layout; orphans (issues without a single edge — in practice only a root that has neither subtasks nor Depend links) go to a separate lane below. |
 | `src/auth/` | Hub OAuth 2.0 implicit flow: auth URL, `state` (nonce + issue id), fragment parsing, silent refresh via hidden iframe + `postMessage`, storage, login session. |
 | `src/store/` | Zustand stores: settings (localStorage), auth token (sessionStorage), roadmap build state. |
 | `src/ui/` | React Flow canvas, issue cards coloured by status, toolbar, settings, status banner. |
@@ -24,8 +24,20 @@ dependency, so the whole algorithm is unit-tested against fixtures.
 | Subtask | A is *parent for* X → X is a child | A is *subtask of* X → X is the parent |
 | Depend | A *is required for* X → edge A → X | A *depends on* X → edge X → A |
 
-Map edges are Depend only, drawn prerequisite → dependent. Relates and Duplicate are
-ignored.
+Map edges are drawn prerequisite → dependent and come in two kinds:
+
+| Edge kind | Source | Drawn as |
+|---|---|---|
+| `depend` | an explicit Depend link | solid arrow |
+| `subtask` | the Subtask hierarchy — a parent is finished only once all of its subtasks are, so every child is a prerequisite of its parent | dashed, paler arrow |
+
+Both ends of the hierarchy are read (`Subtask OUTWARD` on the parent and `Subtask INWARD`
+on the child) so the edge survives when one side is an inaccessible placeholder. When the
+same pair carries both kinds the explicit `depend` wins. A subtask that was never
+collected (a subtask of an external prerequisite, say) produces no edge.
+
+Because of this, `dagre` puts a parent to the right of all of its subtasks and the root
+epic ends up in the rightmost rank. Relates and Duplicate are ignored.
 
 ## Node classes
 
