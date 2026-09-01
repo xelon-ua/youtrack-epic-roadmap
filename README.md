@@ -14,9 +14,7 @@ unresolved prerequisites. Hide resolved issues to see what can be started now.
 
 ![An epic laid out as a dependency graph, with resolved issues hidden](docs/images/roadmap-example.png)
 
-Above: a real epic with "Show resolved" turned off — 17 open issues out of 61. The data is
-anonymised, so every issue id, summary and assignee in the picture is made up; the shape of
-the graph is not.
+Above: an example of how the graph is rendered.
 
 ## Setup
 
