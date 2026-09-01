@@ -1,10 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import * as Switch from '@radix-ui/react-switch';
 import { useRoadmapStore } from '../store/roadmapStore';
+import { useSettingsStore } from '../store/settingsStore';
+import type { ColorScheme } from '../auth/storage';
 import { AuthStatus } from './AuthStatus';
 
 export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void; onFitView(): void }) {
   const { issueId, status, roadmap, showResolved, build, setShowResolved } = useRoadmapStore();
+  const colorScheme = useSettingsStore((s) => s.settings.colorScheme);
+  const updateSettings = useSettingsStore((s) => s.update);
   const [draft, setDraft] = useState(issueId);
   // Reset the draft when the store's issue id changes (URL param, OAuth state).
   const [prevIssueId, setPrevIssueId] = useState(issueId);
@@ -51,6 +55,17 @@ export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void;
           <Switch.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white transition data-[state=checked]:translate-x-4" />
         </Switch.Root>
         Show resolved
+      </label>
+      <label className="flex items-center gap-2">
+        Colours
+        <select
+          value={colorScheme}
+          onChange={(e) => updateSettings({ colorScheme: e.target.value as ColorScheme })}
+          className="rounded border px-2 py-1"
+        >
+          <option value="semantic">Semantic</option>
+          <option value="youtrack">YouTrack</option>
+        </select>
       </label>
       <button type="button" onClick={onFitView} className="rounded border px-2 py-1">
         Fit view

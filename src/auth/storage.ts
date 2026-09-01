@@ -1,10 +1,21 @@
+/** `semantic`: our own status palette. `youtrack`: the colours configured on the states. */
+export type ColorScheme = 'semantic' | 'youtrack';
+
+const COLOR_SCHEMES: ColorScheme[] = ['semantic', 'youtrack'];
+
 export interface Settings {
   baseUrl: string;
   clientId: string;
   permanentToken: string;
+  colorScheme: ColorScheme;
 }
 
-export const DEFAULT_SETTINGS: Settings = { baseUrl: '', clientId: '', permanentToken: '' };
+export const DEFAULT_SETTINGS: Settings = {
+  baseUrl: '',
+  clientId: '',
+  permanentToken: '',
+  colorScheme: 'semantic',
+};
 
 export interface StoredToken {
   accessToken: string;
@@ -35,7 +46,10 @@ function write(storage: Storage, key: string, value: unknown): void {
 
 export function loadSettings(): Settings {
   const stored = read<Partial<Settings>>(localStorage, SETTINGS_KEY);
-  return { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
+  const settings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
+  // Storage is hand-editable and outlives releases; an unknown scheme must not reach the renderer.
+  if (!COLOR_SCHEMES.includes(settings.colorScheme)) settings.colorScheme = DEFAULT_SETTINGS.colorScheme;
+  return settings;
 }
 
 export function saveSettings(settings: Settings): void {

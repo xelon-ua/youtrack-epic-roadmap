@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { borderClass, kindLabel, stateColors } from '../../src/ui/nodeStyle';
+import { NEUTRAL_COLORS, borderClass, kindLabel, nodeColors } from '../../src/ui/nodeStyle';
+import { BUCKET_STYLES } from '../../src/ui/statusBucket';
 import type { RoadmapNode } from '../../src/graph/model';
 
 const base: RoadmapNode = {
@@ -26,10 +27,39 @@ describe('nodeStyle', () => {
     expect(kindLabel('external-dependent')).toBe('outside epic ↗');
   });
 
-  it('uses YouTrack state colours and falls back to neutral', () => {
-    expect(
-      stateColors({ ...base, state: { name: 'Open', background: '#123456', foreground: '#ffffff' } }),
-    ).toEqual({ background: '#123456', color: '#ffffff' });
-    expect(stateColors(base)).toEqual({ background: '#e5e7eb', color: '#111827' });
+  describe('semantic scheme', () => {
+    it('colours a node from its status bucket', () => {
+      const node = { ...base, state: { name: 'In Progress', background: '#123456' } };
+      const { background, color, accent } = BUCKET_STYLES['in-progress'];
+      expect(nodeColors(node, 'semantic')).toEqual({ background, color, accent });
+    });
+
+    it('ignores the YouTrack state colour', () => {
+      const a = nodeColors({ ...base, state: { name: 'Open', background: '#123456' } }, 'semantic');
+      const b = nodeColors({ ...base, state: { name: 'Open' } }, 'semantic');
+      expect(a).toEqual(b);
+    });
+  });
+
+  describe('youtrack scheme', () => {
+    it('tints the state colour for the fill and keeps it saturated for the accent', () => {
+      const node = { ...base, state: { name: 'Open', background: '#000000', foreground: '#ffffff' } };
+      expect(nodeColors(node, 'youtrack')).toEqual({
+        background: '#bfbfbf',
+        color: '#111827',
+        accent: '#000000',
+      });
+    });
+
+    it('falls back to neutral when the state has no colour', () => {
+      expect(nodeColors({ ...base, state: { name: 'Open' } }, 'youtrack')).toEqual(NEUTRAL_COLORS);
+      expect(nodeColors(base, 'youtrack')).toEqual(NEUTRAL_COLORS);
+    });
+
+    it('falls back to neutral when the colour cannot be parsed', () => {
+      expect(nodeColors({ ...base, state: { name: 'Open', background: 'chartreuse' } }, 'youtrack')).toEqual(
+        NEUTRAL_COLORS,
+      );
+    });
   });
 });

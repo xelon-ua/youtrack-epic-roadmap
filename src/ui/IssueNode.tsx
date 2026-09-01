@@ -2,8 +2,10 @@ import { memo } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import type { RoadmapNode } from '../graph/model';
+import type { ColorScheme } from '../auth/storage';
 import { NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
-import { borderClass, kindLabel, stateColors } from './nodeStyle';
+import { useSettingsStore } from '../store/settingsStore';
+import { borderClass, kindLabel, nodeColors } from './nodeStyle';
 
 export interface IssueNodeData extends Record<string, unknown> {
   node: RoadmapNode;
@@ -11,9 +13,17 @@ export interface IssueNodeData extends Record<string, unknown> {
 }
 export type IssueFlowNode = Node<IssueNodeData, 'issue'>;
 
-export function IssueNodeCard({ node, highlighted }: { node: RoadmapNode; highlighted: boolean }) {
+export function IssueNodeCard({
+  node,
+  highlighted,
+  scheme,
+}: {
+  node: RoadmapNode;
+  highlighted: boolean;
+  scheme: ColorScheme;
+}) {
   const label = kindLabel(node.kind);
-  const colors = stateColors(node);
+  const colors = nodeColors(node, scheme);
   return (
     <Tooltip.Provider delayDuration={300}>
       <Tooltip.Root>
@@ -23,12 +33,19 @@ export function IssueNodeCard({ node, highlighted }: { node: RoadmapNode; highli
             onClick={() => window.open(node.url, '_blank', 'noopener')}
             style={{ width: NODE_WIDTH, height: NODE_HEIGHT, background: colors.background, color: colors.color }}
             className={[
-              'rounded-md px-3 py-2 text-left shadow-sm flex flex-col justify-between cursor-pointer',
+              'relative overflow-hidden rounded-md py-2 pl-4 pr-3 text-left shadow-sm flex flex-col justify-between cursor-pointer',
               borderClass(node.kind),
-              node.resolved ? 'opacity-55' : '',
+              node.resolved ? 'opacity-70' : '',
               highlighted ? 'ring-4 ring-blue-400' : '',
             ].join(' ')}
           >
+            {/* Status accent: the fill alone stops separating cards once the map is zoomed out. */}
+            <span
+              data-testid="status-stripe"
+              aria-hidden="true"
+              className="absolute left-0 top-0 h-full w-1.5"
+              style={{ background: colors.accent }}
+            />
             <div className="flex items-center justify-between text-xs font-mono">
               <span className="font-semibold">{node.id}</span>
               {label && <span className="rounded bg-black/10 px-1">{label}</span>}
@@ -57,10 +74,11 @@ export function IssueNodeCard({ node, highlighted }: { node: RoadmapNode; highli
 }
 
 function IssueNodeComponent({ data }: NodeProps<IssueFlowNode>) {
+  const scheme = useSettingsStore((s) => s.settings.colorScheme);
   return (
     <>
       <Handle type="target" position={Position.Left} className="!bg-gray-500" />
-      <IssueNodeCard node={data.node} highlighted={data.highlighted} />
+      <IssueNodeCard node={data.node} highlighted={data.highlighted} scheme={scheme} />
       <Handle type="source" position={Position.Right} className="!bg-gray-500" />
     </>
   );

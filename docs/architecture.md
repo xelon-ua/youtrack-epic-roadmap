@@ -12,7 +12,7 @@ Single-page app, no backend. Everything below runs in the browser.
 | `src/graph/layout.ts` | `dagre` left-to-right layout; orphans (epic issues without any Depend link) go to a separate lane below. |
 | `src/auth/` | Hub OAuth 2.0 implicit flow: auth URL, `state` (nonce + issue id), fragment parsing, silent refresh via hidden iframe + `postMessage`, storage, login session. |
 | `src/store/` | Zustand stores: settings (localStorage), auth token (sessionStorage), roadmap build state. |
-| `src/ui/` | React Flow canvas, issue cards coloured by YouTrack state, toolbar, settings, status banner. |
+| `src/ui/` | React Flow canvas, issue cards coloured by status, toolbar, settings, status banner. |
 
 `graph/*` is pure: it takes a `fetchIssue(id)` function and has no React or network
 dependency, so the whole algorithm is unit-tested against fixtures.
@@ -39,6 +39,20 @@ ignored.
 When an issue is reachable through several classes the highest-priority one wins
 (`root` > `epic` > `external-prerequisite` > `external-dependent`). Issues the user
 cannot read become "(no access)" placeholders and are not traversed.
+
+## Status colours
+
+A card carries its status as a light fill plus a saturated 6 px stripe on the left; the
+border is reserved for the node class above. The **Colours** control in the toolbar picks
+the scheme (persisted in `Settings.colorScheme`):
+
+- `semantic` (default) — `src/ui/statusBucket.ts` sorts an issue into one of four buckets.
+  `resolved` from YouTrack decides `done` outright; for the rest the state name is matched
+  case-insensitively (`verify|review|qa|test|check` → review, checked first so "code review
+  in progress" is review; `progress|in work|development|doing|ongoing|wip` → in progress;
+  anything else, including a missing state → not started). Each bucket has a fixed palette.
+- `youtrack` — the state's own colour: undiluted for the stripe, mixed 75 % with white for
+  the fill so dark text stays readable. States without a colour fall back to neutral grey.
 
 ## Auth flow
 
