@@ -1,0 +1,52 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  loadSettings,
+  saveSettings,
+  DEFAULT_SETTINGS,
+  loadToken,
+  saveToken,
+  clearToken,
+  loadPendingState,
+  savePendingState,
+  clearPendingState,
+} from '../../src/auth/storage';
+
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
+
+describe('settings', () => {
+  it('returns defaults when nothing stored or stored value is corrupt', () => {
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+    localStorage.setItem('yer.settings', '{not json');
+    expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+  it('round-trips and fills missing keys with defaults', () => {
+    saveSettings({ baseUrl: 'https://x', clientId: 'c', permanentToken: '' });
+    expect(loadSettings()).toEqual({ baseUrl: 'https://x', clientId: 'c', permanentToken: '' });
+    localStorage.setItem('yer.settings', JSON.stringify({ baseUrl: 'https://y' }));
+    expect(loadSettings()).toEqual({ ...DEFAULT_SETTINGS, baseUrl: 'https://y' });
+  });
+});
+
+describe('token', () => {
+  it('round-trips through sessionStorage and clears', () => {
+    expect(loadToken()).toBeNull();
+    saveToken({ accessToken: 't', expiresAt: 123 });
+    expect(loadToken()).toEqual({ accessToken: 't', expiresAt: 123 });
+    expect(localStorage.getItem('yer.oauthToken')).toBeNull();
+    clearToken();
+    expect(loadToken()).toBeNull();
+  });
+});
+
+describe('pending state', () => {
+  it('round-trips and clears', () => {
+    expect(loadPendingState()).toBeNull();
+    savePendingState('abc');
+    expect(loadPendingState()).toBe('abc');
+    clearPendingState();
+    expect(loadPendingState()).toBeNull();
+  });
+});
