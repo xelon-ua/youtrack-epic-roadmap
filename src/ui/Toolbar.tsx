@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import * as Switch from '@radix-ui/react-switch';
 import { useRoadmapStore } from '../store/roadmapStore';
 import { AuthStatus } from './AuthStatus';
@@ -6,7 +6,12 @@ import { AuthStatus } from './AuthStatus';
 export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void; onFitView(): void }) {
   const { issueId, status, roadmap, showResolved, build, setShowResolved } = useRoadmapStore();
   const [draft, setDraft] = useState(issueId);
-  useEffect(() => setDraft(issueId), [issueId]);
+  // Reset the draft when the store's issue id changes (URL param, OAuth state).
+  const [prevIssueId, setPrevIssueId] = useState(issueId);
+  if (issueId !== prevIssueId) {
+    setPrevIssueId(issueId);
+    setDraft(issueId);
+  }
 
   const hidden =
     roadmap && !showResolved
