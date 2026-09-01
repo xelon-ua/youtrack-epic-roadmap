@@ -12,6 +12,12 @@ Give it an epic id (e.g. `WMS-985`). It collects every subtask recursively, foll
 the epic (one level), and lays the result out in layers: leftmost issues have no
 unresolved prerequisites. Hide resolved issues to see what can be started now.
 
+![An epic laid out as a dependency graph, with resolved issues hidden](docs/images/roadmap-example.png)
+
+Above: a real epic with "Show resolved" turned off — 17 open issues out of 61. The data is
+anonymised, so every issue id, summary and assignee in the picture is made up; the shape of
+the graph is not.
+
 ## Setup
 
 See [docs/setup-youtrack.md](docs/setup-youtrack.md): a YouTrack admin must allow the
