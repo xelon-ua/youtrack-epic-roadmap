@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Background,
   Controls,
@@ -13,7 +13,8 @@ import {
 } from '@xyflow/react';
 import type { Roadmap } from '../graph/model';
 import { projectRoadmap } from '../graph/filter';
-import { layoutRoadmap } from '../graph/layout';
+import { layoutRoadmap, NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
+import { useHoverStore } from '../store/hoverStore';
 import { IssueNode, type IssueFlowNode } from './IssueNode';
 
 type LaneNode = Node<{ label: string }, 'lane'>;
@@ -30,24 +31,29 @@ const EDGE_IDLE = '#9ca3af';
 const EDGE_ACTIVE = '#2563eb';
 
 export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; showResolved: boolean }) {
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const hoveredId = useHoverStore((s) => s.hoveredId);
+  const setHovered = useHoverStore((s) => s.setHovered);
   const { fitView } = useReactFlow();
 
-  const { nodes, edges } = useMemo(() => {
-    const projection = projectRoadmap(roadmap, { showResolved });
+  const projection = useMemo(() => projectRoadmap(roadmap, { showResolved }), [roadmap, showResolved]);
+
+  /*
+   * Node objects must survive hovering untouched: React Flow drops a node's measured size when it
+   * has to re-adopt it, hides the card until a ResizeObserver measures it again, and re-subscribes
+   * it to the observer. Rebuilding all of them on every mouse move blanks the graph and floods the
+   * observer ("ResizeObserver loop completed with undelivered notifications"). Highlighting is read
+   * from the hover store inside the cards instead, and the size is declared up front so a node never
+   * has to wait for a measurement to become visible.
+   */
+  const nodes = useMemo(() => {
     const layout = layoutRoadmap(projection);
-    const neighbours = new Set<string>();
-    if (hoveredId) {
-      for (const e of projection.edges) {
-        if (e.from === hoveredId) neighbours.add(e.to);
-        if (e.to === hoveredId) neighbours.add(e.from);
-      }
-    }
     const issueNodes: IssueFlowNode[] = projection.nodes.map((n) => ({
       id: n.id,
       type: 'issue',
       position: layout.positions.get(n.id)!,
-      data: { node: n, highlighted: hoveredId === n.id || neighbours.has(n.id) },
+      data: { node: n },
+      width: NODE_WIDTH,
+      height: NODE_HEIGHT,
       draggable: false,
     }));
     const laneNodes: LaneNode[] = layout.orphanLane
@@ -62,20 +68,38 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
           },
         ]
       : [];
-    const flowEdges: Edge[] = projection.edges.map((e) => {
-      const active = hoveredId !== null && (e.from === hoveredId || e.to === hoveredId);
-      const color = active ? EDGE_ACTIVE : EDGE_IDLE;
-      return {
-        id: `${e.from}>${e.to}`,
-        source: e.from,
-        target: e.to,
-        markerEnd: { type: MarkerType.ArrowClosed, color },
-        style: { stroke: color, strokeWidth: active ? 2.5 : 1.5 },
-        animated: active,
-      };
-    });
-    return { nodes: [...issueNodes, ...laneNodes] as Node[], edges: flowEdges };
-  }, [roadmap, showResolved, hoveredId]);
+    return [...issueNodes, ...laneNodes] as Node[];
+  }, [projection]);
+
+  // Edges are not measured, so recolouring them on hover costs nothing.
+  const edges = useMemo<Edge[]>(
+    () =>
+      projection.edges.map((e) => {
+        const active = hoveredId !== null && (e.from === hoveredId || e.to === hoveredId);
+        const color = active ? EDGE_ACTIVE : EDGE_IDLE;
+        return {
+          id: `${e.from}>${e.to}`,
+          source: e.from,
+          target: e.to,
+          markerEnd: { type: MarkerType.ArrowClosed, color },
+          style: { stroke: color, strokeWidth: active ? 2.5 : 1.5 },
+          animated: active,
+        };
+      }),
+    [projection, hoveredId],
+  );
+
+  const enterNode = (id: string): void => {
+    const highlighted = new Set<string>([id]);
+    for (const e of projection.edges) {
+      if (e.from === id) highlighted.add(e.to);
+      if (e.to === id) highlighted.add(e.from);
+    }
+    setHovered(id, highlighted);
+  };
+
+  // Nothing may stay highlighted once this graph is gone.
+  useEffect(() => () => setHovered(null), [setHovered]);
 
   useEffect(() => {
     // Re-fit whenever the visible graph changes shape.
@@ -91,9 +115,9 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
       nodesConnectable={false}
       elementsSelectable={false}
       onNodeMouseEnter={(_, n) => {
-        if (n.type === 'issue') setHoveredId(n.id);
+        if (n.type === 'issue') enterNode(n.id);
       }}
-      onNodeMouseLeave={() => setHoveredId(null)}
+      onNodeMouseLeave={() => setHovered(null)}
       minZoom={0.1}
       fitView
     >

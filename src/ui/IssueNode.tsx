@@ -5,11 +5,11 @@ import type { RoadmapNode } from '../graph/model';
 import type { ColorScheme } from '../auth/storage';
 import { NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
 import { useSettingsStore } from '../store/settingsStore';
+import { useIsHighlighted } from '../store/hoverStore';
 import { borderClass, kindLabel, nodeColors } from './nodeStyle';
 
 export interface IssueNodeData extends Record<string, unknown> {
   node: RoadmapNode;
-  highlighted: boolean;
 }
 export type IssueFlowNode = Node<IssueNodeData, 'issue'>;
 
@@ -73,12 +73,17 @@ export function IssueNodeCard({
   );
 }
 
-function IssueNodeComponent({ data }: NodeProps<IssueFlowNode>) {
+/*
+ * Highlighting is read here rather than passed through `data`: a node object that changes makes
+ * React Flow re-measure the card, which hides it until the measurement lands.
+ */
+function IssueNodeComponent({ id, data }: NodeProps<IssueFlowNode>) {
   const scheme = useSettingsStore((s) => s.settings.colorScheme);
+  const highlighted = useIsHighlighted(id);
   return (
     <>
       <Handle type="target" position={Position.Left} className="!bg-gray-500" />
-      <IssueNodeCard node={data.node} highlighted={data.highlighted} scheme={scheme} />
+      <IssueNodeCard node={data.node} highlighted={highlighted} scheme={scheme} />
       <Handle type="source" position={Position.Right} className="!bg-gray-500" />
     </>
   );
