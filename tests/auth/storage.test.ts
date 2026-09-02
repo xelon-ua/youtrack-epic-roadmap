@@ -23,7 +23,13 @@ describe('settings', () => {
     expect(loadSettings()).toEqual(DEFAULT_SETTINGS);
   });
   it('round-trips and fills missing keys with defaults', () => {
-    const settings = { baseUrl: 'https://x', clientId: 'c', permanentToken: '', colorScheme: 'youtrack' as const };
+    const settings = {
+      baseUrl: 'https://x',
+      clientId: 'c',
+      permanentToken: '',
+      colorScheme: 'youtrack' as const,
+      theme: 'dark' as const,
+    };
     saveSettings(settings);
     expect(loadSettings()).toEqual(settings);
     localStorage.setItem('yer.settings', JSON.stringify({ baseUrl: 'https://y' }));
@@ -33,6 +39,11 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.colorScheme).toBe('semantic');
     localStorage.setItem('yer.settings', JSON.stringify({ colorScheme: 'rainbow' }));
     expect(loadSettings().colorScheme).toBe('semantic');
+  });
+  it('defaults the theme to system and rejects unknown values', () => {
+    expect(DEFAULT_SETTINGS.theme).toBe('system');
+    localStorage.setItem('yer.settings', JSON.stringify({ theme: 'sepia' }));
+    expect(loadSettings().theme).toBe('system');
   });
 });
 

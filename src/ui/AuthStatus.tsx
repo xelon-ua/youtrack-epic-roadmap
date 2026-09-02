@@ -13,11 +13,11 @@ export function AuthStatus() {
   const mode = authMode();
 
   if (mode === 'permanent-token') {
-    return <span className="text-gray-600">token · {user?.login ?? '…'}</span>;
+    return <span className="text-gray-600 dark:text-slate-400">token · {user?.login ?? '…'}</span>;
   }
   if (mode === 'oauth') {
     return (
-      <span className="flex items-center gap-2 text-gray-600">
+      <span className="flex items-center gap-2 text-gray-600 dark:text-slate-400">
         {user?.fullName ?? user?.login ?? 'signed in'}
         <button type="button" onClick={signOut} className="underline">
           Sign out
@@ -32,7 +32,7 @@ export function AuthStatus() {
       disabled={!canLogin}
       title={canLogin ? undefined : 'Set YouTrack URL and OAuth client ID in Settings'}
       onClick={() => startLogin(issueId || null)}
-      className="rounded bg-gray-900 px-3 py-1 text-white disabled:opacity-40"
+      className="rounded bg-gray-900 px-3 py-1 text-white disabled:opacity-40 dark:bg-slate-700"
     >
       Sign in with YouTrack
     </button>

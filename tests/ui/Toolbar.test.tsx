@@ -6,6 +6,7 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 import { DEFAULT_SETTINGS } from '../../src/auth/storage';
 
 beforeEach(() => {
+  localStorage.clear();
   useRoadmapStore.setState({ issueId: '', status: 'idle', roadmap: null, error: null, progress: 0, showResolved: true });
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
 });
@@ -24,6 +25,18 @@ describe('Toolbar', () => {
     render(<Toolbar onOpenSettings={() => {}} onFitView={() => {}} />);
     fireEvent.click(screen.getByRole('switch', { name: /show resolved/i }));
     expect(useRoadmapStore.getState().showResolved).toBe(false);
+  });
+
+  it('cycles the theme preference and persists it', () => {
+    render(<Toolbar onOpenSettings={() => {}} onFitView={() => {}} />);
+    const button = screen.getByRole('button', { name: /theme: system/i });
+    fireEvent.click(button);
+    expect(useSettingsStore.getState().settings.theme).toBe('light');
+    expect(JSON.parse(localStorage.getItem('yer.settings')!).theme).toBe('light');
+    fireEvent.click(screen.getByRole('button', { name: /theme: light/i }));
+    expect(useSettingsStore.getState().settings.theme).toBe('dark');
+    fireEvent.click(screen.getByRole('button', { name: /theme: dark/i }));
+    expect(useSettingsStore.getState().settings.theme).toBe('system');
   });
 
   it('switches the colour scheme and persists it', () => {

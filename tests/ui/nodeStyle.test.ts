@@ -27,16 +27,22 @@ describe('nodeStyle', () => {
     expect(kindLabel('external-dependent')).toBe('outside epic ↗');
   });
 
+  it('gives every kind a border that stays visible in the dark theme', () => {
+    for (const kind of ['root', 'epic', 'external-prerequisite', 'external-dependent'] as const) {
+      expect(borderClass(kind)).toMatch(/dark:border-/);
+    }
+  });
+
   describe('semantic scheme', () => {
     it('colours a node from its status bucket', () => {
       const node = { ...base, state: { name: 'In Progress', background: '#123456' } };
-      const { background, color, accent } = BUCKET_STYLES['in-progress'];
-      expect(nodeColors(node, 'semantic')).toEqual({ background, color, accent });
+      expect(nodeColors(node, 'semantic', 'light')).toEqual(BUCKET_STYLES.light['in-progress']);
+      expect(nodeColors(node, 'semantic', 'dark')).toEqual(BUCKET_STYLES.dark['in-progress']);
     });
 
     it('ignores the YouTrack state colour', () => {
-      const a = nodeColors({ ...base, state: { name: 'Open', background: '#123456' } }, 'semantic');
-      const b = nodeColors({ ...base, state: { name: 'Open' } }, 'semantic');
+      const a = nodeColors({ ...base, state: { name: 'Open', background: '#123456' } }, 'semantic', 'light');
+      const b = nodeColors({ ...base, state: { name: 'Open' } }, 'semantic', 'light');
       expect(a).toEqual(b);
     });
   });
@@ -44,21 +50,31 @@ describe('nodeStyle', () => {
   describe('youtrack scheme', () => {
     it('tints the state colour for the fill and keeps it saturated for the accent', () => {
       const node = { ...base, state: { name: 'Open', background: '#000000', foreground: '#ffffff' } };
-      expect(nodeColors(node, 'youtrack')).toEqual({
+      expect(nodeColors(node, 'youtrack', 'light')).toEqual({
         background: '#bfbfbf',
         color: '#111827',
         accent: '#000000',
       });
     });
 
-    it('falls back to neutral when the state has no colour', () => {
-      expect(nodeColors({ ...base, state: { name: 'Open' } }, 'youtrack')).toEqual(NEUTRAL_COLORS);
-      expect(nodeColors(base, 'youtrack')).toEqual(NEUTRAL_COLORS);
+    it('sinks the state colour into the dark surface and flips the text', () => {
+      const node = { ...base, state: { name: 'Open', background: '#ffffff' } };
+      const colors = nodeColors(node, 'youtrack', 'dark');
+      expect(colors.accent).toBe('#ffffff');
+      // A card fill that stays near the dark page background, not a glaring white block.
+      expect(colors.background).toBe('#525866');
+      expect(colors.color).toBe(BUCKET_STYLES.dark['not-started'].color);
+    });
+
+    it('falls back to the neutral of the current theme when the state has no colour', () => {
+      expect(nodeColors({ ...base, state: { name: 'Open' } }, 'youtrack', 'light')).toEqual(NEUTRAL_COLORS.light);
+      expect(nodeColors(base, 'youtrack', 'light')).toEqual(NEUTRAL_COLORS.light);
+      expect(nodeColors(base, 'youtrack', 'dark')).toEqual(NEUTRAL_COLORS.dark);
     });
 
     it('falls back to neutral when the colour cannot be parsed', () => {
-      expect(nodeColors({ ...base, state: { name: 'Open', background: 'chartreuse' } }, 'youtrack')).toEqual(
-        NEUTRAL_COLORS,
+      expect(nodeColors({ ...base, state: { name: 'Open', background: 'chartreuse' } }, 'youtrack', 'light')).toEqual(
+        NEUTRAL_COLORS.light,
       );
     });
   });

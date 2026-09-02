@@ -8,6 +8,7 @@ import { StatusBanner } from './ui/StatusBanner';
 import { useRoadmapStore } from './store/roadmapStore';
 import { useAuthStore, getAccessToken } from './store/authStore';
 import { handleOAuthCallback, loadCurrentUser, scheduleRefresh } from './auth/session';
+import { ThemeProvider } from './ui/ThemeProvider';
 
 function issueFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('issue');
@@ -48,7 +49,7 @@ function Shell() {
   }, [token]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-white text-gray-900 dark:bg-slate-900 dark:text-slate-100">
       <Toolbar onOpenSettings={() => setSettingsOpen(true)} onFitView={() => void fitView({ padding: 0.1 })} />
       <StatusBanner onOpenSettings={() => setSettingsOpen(true)} />
       <main className="relative flex-1">
@@ -58,7 +59,9 @@ function Shell() {
             <Legend />
           </>
         ) : (
-          <div className="flex h-full items-center justify-center text-gray-500">YouTrack Epic Roadmap</div>
+          <div className="flex h-full items-center justify-center text-gray-500 dark:text-slate-400">
+            YouTrack Epic Roadmap
+          </div>
         )}
       </main>
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
@@ -68,8 +71,10 @@ function Shell() {
 
 export default function App() {
   return (
-    <ReactFlowProvider>
-      <Shell />
-    </ReactFlowProvider>
+    <ThemeProvider>
+      <ReactFlowProvider>
+        <Shell />
+      </ReactFlowProvider>
+    </ThemeProvider>
   );
 }
