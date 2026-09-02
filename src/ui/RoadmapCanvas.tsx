@@ -14,7 +14,10 @@ import {
 import type { Roadmap } from '../graph/model';
 import { projectRoadmap } from '../graph/filter';
 import { layoutRoadmap, NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
+import { criticalPath, edgeKey } from '../graph/criticalPath';
 import { useHoverStore } from '../store/hoverStore';
+import { useCriticalPathStore } from '../store/criticalPathStore';
+import { useSettingsStore } from '../store/settingsStore';
 import { IssueNode, type IssueFlowNode } from './IssueNode';
 import { useTheme, type Theme } from './theme';
 
@@ -35,12 +38,17 @@ interface EdgeColors {
   active: string;
   /* Hierarchy edges are inferred, not links the user drew, so they stay quieter. */
   subtask: string;
+  /* Matches the amber outline the cards on the path wear. */
+  critical: string;
 }
 
 const EDGE_COLORS: Record<Theme, EdgeColors> = {
-  light: { idle: '#9ca3af', active: '#2563eb', subtask: '#d1d5db' },
-  dark: { idle: '#64748b', active: '#60a5fa', subtask: '#3f4a5f' },
+  light: { idle: '#9ca3af', active: '#2563eb', subtask: '#d1d5db', critical: '#d97706' },
+  dark: { idle: '#64748b', active: '#60a5fa', subtask: '#3f4a5f', critical: '#fbbf24' },
 };
+
+const NO_IDS: ReadonlySet<string> = new Set();
+const NO_KEYS: ReadonlySet<string> = new Set();
 
 const EDGE_SUBTASK_DASH = '6 4';
 
@@ -48,9 +56,22 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
   const hoveredId = useHoverStore((s) => s.hoveredId);
   const theme = useTheme();
   const setHovered = useHoverStore((s) => s.setHovered);
+  const setCriticalPath = useCriticalPathStore((s) => s.setCriticalPath);
+  const showCriticalPath = useSettingsStore((s) => s.settings.criticalPath);
   const { fitView } = useReactFlow();
 
   const projection = useMemo(() => projectRoadmap(roadmap, { showResolved }), [roadmap, showResolved]);
+
+  /*
+   * The path follows the visible slice: hiding resolved issues shortens it. It is computed
+   * whether or not it is drawn — one pass over the graph — and the switch decides what is
+   * published to the cards and to the toolbar.
+   */
+  const path = useMemo(() => criticalPath(projection), [projection]);
+  const criticalEdges = showCriticalPath ? path.edgeKeys : NO_KEYS;
+  useEffect(() => {
+    setCriticalPath(showCriticalPath ? path.nodeIds : NO_IDS);
+  }, [showCriticalPath, path, setCriticalPath]);
 
   /*
    * Node objects must survive hovering untouched: React Flow drops a node's measured size when it
@@ -92,8 +113,15 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
       projection.edges.map((e) => {
         const active = hoveredId !== null && (e.from === hoveredId || e.to === hoveredId);
         const hierarchy = e.kind === 'subtask';
+        const critical = criticalEdges.has(edgeKey(e.from, e.to));
         const palette = EDGE_COLORS[theme];
-        const color = active ? palette.active : hierarchy ? palette.subtask : palette.idle;
+        const color = active
+          ? palette.active
+          : critical
+            ? palette.critical
+            : hierarchy
+              ? palette.subtask
+              : palette.idle;
         return {
           id: `${e.from}>${e.to}`,
           source: e.from,
@@ -101,13 +129,13 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
           markerEnd: { type: MarkerType.ArrowClosed, color },
           style: {
             stroke: color,
-            strokeWidth: active ? 2.5 : 1.5,
+            strokeWidth: active || critical ? 2.5 : 1.5,
             ...(hierarchy ? { strokeDasharray: EDGE_SUBTASK_DASH } : {}),
           },
           animated: active && !hierarchy,
         };
       }),
-    [projection, hoveredId, theme],
+    [projection, hoveredId, theme, criticalEdges],
   );
 
   const enterNode = (id: string): void => {
@@ -121,6 +149,7 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
 
   // Nothing may stay highlighted once this graph is gone.
   useEffect(() => () => setHovered(null), [setHovered]);
+  useEffect(() => () => setCriticalPath(NO_IDS), [setCriticalPath]);
 
   useEffect(() => {
     // Re-fit whenever the visible graph changes shape.

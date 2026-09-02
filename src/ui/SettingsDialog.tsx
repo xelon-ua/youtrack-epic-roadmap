@@ -18,7 +18,10 @@ function SettingsForm({ onClose }: { onClose(): void }) {
     onClose();
   };
 
-  const field = (label: string, key: keyof Settings, placeholder: string, type = 'text') => (
+  // Only the connection settings are typed in here; the rest are toolbar controls.
+  type TextSetting = 'baseUrl' | 'clientId' | 'permanentToken';
+
+  const field = (label: string, key: TextSetting, placeholder: string, type = 'text') => (
     <label className="block text-sm">
       <span className="mb-1 block font-medium">{label}</span>
       <input

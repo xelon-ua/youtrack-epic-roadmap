@@ -9,6 +9,7 @@ Single-page app, no backend. Everything below runs in the browser.
 | `src/api/` | Typed `fetch` wrapper over YouTrack REST; maps HTTP/CORS failures to error classes. |
 | `src/graph/collect.ts` | BFS that builds the roadmap: epic tree (Subtask, recursive) → external prerequisites (Depend "depends on", recursive) → external dependents (Depend "is required for", one level). Emits both Depend edges and implicit subtask → parent edges. Concurrency 6, soft cap 500 issues. |
 | `src/graph/filter.ts` | Projection that hides resolved issues (root always kept); no bridging edges, so a node whose prerequisites are all resolved moves to layer 0. |
+| `src/graph/criticalPath.ts` | Longest chain of issues ending at the root epic, measured in issues; returns every node and step with no slack. |
 | `src/graph/layout.ts` | `dagre` left-to-right layout; orphans (issues without a single edge — in practice only a root that has neither subtasks nor Depend links) go to a separate lane below. |
 | `src/auth/` | Hub OAuth 2.0 implicit flow: auth URL, `state` (nonce + issue id), fragment parsing, silent refresh via hidden iframe + `postMessage`, storage, login session. |
 | `src/store/` | Zustand stores: settings (localStorage), auth token (sessionStorage), roadmap build state. |
@@ -69,6 +70,27 @@ dark variant, chosen by the active theme:
   surface for the fill (75 % white in the light theme, 72 % of the dark surface in the dark
   one) so the text on it stays readable. States without a colour fall back to neutral grey.
 
+## Critical path
+
+The **Critical path** switch in the toolbar (persisted in `Settings.criticalPath`) outlines the
+longest chain of issues that has to finish before the root epic can. The roadmap carries no
+estimates, so the chain is measured in issues: every one counts as a single step.
+
+`criticalPath` ranks the visible projection with a Kahn topological order — `depth(n)` is the
+longest chain ending at `n` — then walks back from the root, keeping every predecessor exactly
+one rank lower. Ties are all kept: a node is on the path when *some* longest chain runs through
+it, which is the same as saying it has no slack. Two consequences follow from working on the
+projection: hiding resolved issues shortens the path, and issues downstream of the root
+(`external-dependent`) are never on it. Nodes inside a cycle never reach indegree 0, so they
+get no depth and no chain is routed through them; `findCycles` reports them separately.
+
+Nothing is suppressed when the path turns out to cover the whole graph — the switch is the
+control, and the toolbar states how many issues are on the path so that case is visible. Cards
+on the path wear an amber outline (an outline, not a ring, so a hovered card keeps both marks)
+and the steps between them are drawn in the same amber. The set lives in
+`src/store/criticalPathStore.ts` rather than in `node.data`, for the same reason as the hover
+state: a changed node object makes React Flow re-measure the graph.
+
 ## Theme
 
 The toolbar's theme button cycles system → light → dark, persisted in `Settings.theme`.
@@ -92,5 +114,5 @@ stored theme before the first paint so the app never flashes white.
 
 ## Out of scope (v1)
 
-Image export, editing links from the map, critical path, dates or sprints on the axis,
-dark theme, multiple epics on one map.
+Image export, editing links from the map, dates or sprints on the axis, multiple epics on one
+map, weighting the critical path by an estimate field.

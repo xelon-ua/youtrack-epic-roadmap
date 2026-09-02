@@ -41,6 +41,9 @@ const { RoadmapCanvas } = await import('../../src/ui/RoadmapCanvas');
 const { collectRoadmap } = await import('../../src/graph/collect');
 const { createFixtureFetch } = await import('../fixtures/epic');
 const { NODE_HEIGHT, NODE_WIDTH } = await import('../../src/graph/layout');
+const { useSettingsStore } = await import('../../src/store/settingsStore');
+const { useCriticalPathStore } = await import('../../src/store/criticalPathStore');
+const { DEFAULT_SETTINGS } = await import('../../src/auth/storage');
 const { Roadmap } = await import('../../src/graph/model').then((m) => ({ Roadmap: m }));
 void Roadmap;
 
@@ -53,7 +56,13 @@ beforeEach(async () => {
   roadmap = await collectRoadmap('EP-1', fetchIssue, { baseUrl: 'https://yt.example' });
   captured.nodes = [];
   captured.edges = [];
+  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
+  useCriticalPathStore.setState({ ids: new Set() });
 });
+
+const showCriticalPath = (on: boolean): void => {
+  useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, criticalPath: on } });
+};
 
 const byId = (nodes: Node[]): Map<string, Node> => new Map(nodes.map((n) => [n.id, n]));
 
@@ -101,6 +110,46 @@ describe('RoadmapCanvas', () => {
     const idle = captured.edges.find((e) => e.id === 'EP-4>EP-2')!.style?.stroke;
     act(() => captured.onNodeMouseEnter?.({}, { id: 'EP-2', type: 'issue' } as Node));
     expect(captured.edges.find((e) => e.id === 'EP-4>EP-2')!.style?.stroke).not.toBe(idle);
+  });
+
+  it('publishes the critical path only while the switch is on', () => {
+    render(<RoadmapCanvas roadmap={roadmap} showResolved />);
+    expect(useCriticalPathStore.getState().ids.size).toBe(0);
+
+    act(() => showCriticalPath(true));
+    // EXT-11 → EXT-10 → EP-2 → EP-5 → EP-1, tied with EP-3 → EP-4 → EP-2 → EP-5 → EP-1.
+    expect([...useCriticalPathStore.getState().ids].sort()).toEqual([
+      'EP-1',
+      'EP-2',
+      'EP-3',
+      'EP-4',
+      'EP-5',
+      'EXT-10',
+      'EXT-11',
+    ]);
+
+    act(() => showCriticalPath(false));
+    expect(useCriticalPathStore.getState().ids.size).toBe(0);
+  });
+
+  it('colours the steps of the critical path apart from the rest', () => {
+    render(<RoadmapCanvas roadmap={roadmap} showResolved />);
+    const stroke = (id: string): string | undefined => captured.edges.find((e) => e.id === id)!.style?.stroke;
+    const idle = stroke('EP-5>EP-1');
+
+    act(() => showCriticalPath(true));
+    expect(stroke('EP-5>EP-1')).not.toBe(idle); // a step of the path
+    expect(stroke('EP-6>EP-1')).toBe(idle); // has slack
+    expect(stroke('EP-3>EP-2')).toBe(idle); // joins two critical nodes but skips a rank
+  });
+
+  it('keeps node object identity when the critical path switch flips', () => {
+    render(<RoadmapCanvas roadmap={roadmap} showResolved />);
+    const before = byId(captured.nodes);
+    act(() => showCriticalPath(true));
+    for (const [id, node] of byId(captured.nodes)) {
+      expect(node, `node ${id} was rebuilt by the critical path switch`).toBe(before.get(id));
+    }
   });
 
   it('declares the fixed card size on issue nodes so they render before being measured', () => {

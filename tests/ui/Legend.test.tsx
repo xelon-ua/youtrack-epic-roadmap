@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { Legend } from '../../src/ui/Legend';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { DEFAULT_SETTINGS } from '../../src/auth/storage';
@@ -27,6 +27,14 @@ describe('Legend', () => {
     for (const bucket of BUCKET_ORDER) {
       expect(screen.getByText(BUCKET_LABELS[bucket])).toBeInTheDocument();
     }
+  });
+
+  it('explains the critical path outline only while it is shown', () => {
+    render(<Legend />);
+    expect(screen.queryByText(/critical path/i)).not.toBeInTheDocument();
+
+    act(() => useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, criticalPath: true } }));
+    expect(screen.getByText(/critical path/i)).toBeInTheDocument();
   });
 
   it('defers to YouTrack in the youtrack scheme', () => {
