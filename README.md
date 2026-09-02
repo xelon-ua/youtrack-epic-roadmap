@@ -13,7 +13,8 @@ the epic (one level), and lays the result out in layers: leftmost issues have no
 unresolved prerequisites. Hide resolved issues to see what can be started now. The
 critical path switch outlines the longest chain of issues standing between you and a
 finished epic. The theme button in the toolbar switches between following the system,
-light and dark.
+light and dark. The last issue you built and the state of the "Show resolved" switch are
+remembered for the next visit: the id comes back in the input, ready for you to press Build.
 
 ![An epic laid out as a dependency graph, with resolved issues hidden](docs/images/roadmap-example.png)
 

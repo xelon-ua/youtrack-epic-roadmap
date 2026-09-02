@@ -12,7 +12,7 @@ Single-page app, no backend. Everything below runs in the browser.
 | `src/graph/criticalPath.ts` | Longest chain of issues ending at the root epic, measured in issues; returns every node and step with no slack. |
 | `src/graph/layout.ts` | `dagre` left-to-right layout; orphans (issues without a single edge — in practice only a root that has neither subtasks nor Depend links) go to a separate lane below. |
 | `src/auth/` | Hub OAuth 2.0 implicit flow: auth URL, `state` (nonce + issue id), fragment parsing, silent refresh via hidden iframe + `postMessage`, storage, login session. |
-| `src/store/` | Zustand stores: settings (localStorage), auth token (sessionStorage), roadmap build state. |
+| `src/store/` | Zustand stores: settings (localStorage), auth token (sessionStorage), roadmap build state. Every switch in the toolbar lives in settings, so it survives a reload. |
 | `src/ui/` | React Flow canvas, issue cards coloured by status, toolbar, settings, status banner. |
 
 `graph/*` is pure: it takes a `fetchIssue(id)` function and has no React or network
@@ -100,6 +100,23 @@ plus `color-scheme`. `ThemeProvider` resolves it once and hands it down through 
 issue cards must not each own a media-query listener. Tailwind's `dark:` variant is bound
 to that class in `src/index.css`, and a small inline script in `index.html` applies the
 stored theme before the first paint so the app never flashes white.
+
+## Remembered state
+
+`Settings` (localStorage, key `yer.settings`) keeps the toolbar as you left it: the colour
+scheme, the theme, the critical path and **Show resolved** switches, and `lastIssueId` — the
+issue of the last build, written when the build starts so a failed one is remembered too.
+Because these are per browser rather than per issue, opening a different epic inherits the
+switches from the previous one.
+
+`lastIssueId` is only ever *offered*: the toolbar seeds its input with it when the store has
+no issue yet, and nothing is fetched until you press Build. Autobuilding stays the job of the
+`?issue=` parameter (or an OAuth callback carrying the id), which also decides what the URL
+says — a remembered id never rewrites it. Precedence at boot is OAuth callback → `?issue=` →
+remembered id.
+
+Loading is defensive: the store is hand-editable and outlives releases, so `loadSettings`
+replaces any value of the wrong type with its default.
 
 ## Auth flow
 

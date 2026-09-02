@@ -9,7 +9,7 @@ import type { Roadmap, RoadmapNode } from '../../src/graph/model';
 
 beforeEach(() => {
   localStorage.clear();
-  useRoadmapStore.setState({ issueId: '', status: 'idle', roadmap: null, error: null, progress: 0, showResolved: true });
+  useRoadmapStore.setState({ issueId: '', status: 'idle', roadmap: null, error: null, progress: 0 });
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
   useCriticalPathStore.setState({ ids: new Set() });
 });
@@ -45,10 +45,24 @@ describe('Toolbar', () => {
     expect(build).toHaveBeenCalledWith('wms-1');
   });
 
-  it('toggles show resolved', () => {
+  it('prefills the input with the remembered issue id', () => {
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, lastIssueId: 'WMS-42' } });
+    render(<Toolbar onOpenSettings={() => {}} onFitView={() => {}} />);
+    expect(screen.getByLabelText('Issue ID')).toHaveValue('WMS-42');
+  });
+
+  it('prefers the issue id already in the store over the remembered one', () => {
+    useRoadmapStore.setState({ issueId: 'WMS-1' });
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, lastIssueId: 'WMS-42' } });
+    render(<Toolbar onOpenSettings={() => {}} onFitView={() => {}} />);
+    expect(screen.getByLabelText('Issue ID')).toHaveValue('WMS-1');
+  });
+
+  it('toggles show resolved and persists it', () => {
     render(<Toolbar onOpenSettings={() => {}} onFitView={() => {}} />);
     fireEvent.click(screen.getByRole('switch', { name: /show resolved/i }));
-    expect(useRoadmapStore.getState().showResolved).toBe(false);
+    expect(useSettingsStore.getState().settings.showResolved).toBe(false);
+    expect(JSON.parse(localStorage.getItem('yer.settings')!).showResolved).toBe(false);
   });
 
   it('toggles the critical path and persists it', () => {
