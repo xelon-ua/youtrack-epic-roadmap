@@ -10,13 +10,16 @@ import { nextThemePreference } from './theme';
 const THEME_ICONS: Record<ThemePreference, string> = { system: '🖥', light: '☀', dark: '☾' };
 
 export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void; onFitView(): void }) {
-  const { issueId, status, roadmap, showResolved, build, setShowResolved } = useRoadmapStore();
+  const { issueId, status, roadmap, build } = useRoadmapStore();
   const colorScheme = useSettingsStore((s) => s.settings.colorScheme);
   const theme = useSettingsStore((s) => s.settings.theme);
   const showCriticalPath = useSettingsStore((s) => s.settings.criticalPath);
+  const showResolved = useSettingsStore((s) => s.settings.showResolved);
+  const lastIssueId = useSettingsStore((s) => s.settings.lastIssueId);
   const criticalCount = useCriticalPathStore((s) => s.ids.size);
   const updateSettings = useSettingsStore((s) => s.update);
-  const [draft, setDraft] = useState(issueId);
+  // Nothing built yet in this tab: offer the issue from the previous visit, without building it.
+  const [draft, setDraft] = useState(issueId || lastIssueId);
   // Reset the draft when the store's issue id changes (URL param, OAuth state).
   const [prevIssueId, setPrevIssueId] = useState(issueId);
   if (issueId !== prevIssueId) {
@@ -55,7 +58,7 @@ export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void;
       <label className="flex items-center gap-2">
         <Switch.Root
           checked={showResolved}
-          onCheckedChange={setShowResolved}
+          onCheckedChange={(checked) => updateSettings({ showResolved: checked })}
           aria-label="Show resolved"
           className="relative h-5 w-9 rounded-full bg-gray-300 data-[state=checked]:bg-blue-600 dark:bg-slate-600"
         >

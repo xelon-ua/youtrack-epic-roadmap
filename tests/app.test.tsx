@@ -10,7 +10,7 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
-  useRoadmapStore.setState({ issueId: '', status: 'idle', roadmap: null, error: null, progress: 0, showResolved: true });
+  useRoadmapStore.setState({ issueId: '', status: 'idle', roadmap: null, error: null, progress: 0 });
 });
 
 describe('App', () => {
@@ -37,6 +37,16 @@ describe('App', () => {
     expect(document.documentElement).toHaveClass('dark');
     fireEvent.click(screen.getByRole('button', { name: /theme: system/i }));
     expect(document.documentElement).not.toHaveClass('dark');
+  });
+
+  it('offers the remembered issue id without building it', () => {
+    window.history.replaceState(null, '', '/youtrack-epic-roadmap/');
+    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, lastIssueId: 'WMS-42' } });
+    render(<App />);
+    expect(screen.getByLabelText('Issue ID')).toHaveValue('WMS-42');
+    expect(useRoadmapStore.getState().issueId).toBe('');
+    expect(useRoadmapStore.getState().status).toBe('idle');
+    expect(window.location.search).toBe('');
   });
 
   it('picks the issue id from the URL', () => {

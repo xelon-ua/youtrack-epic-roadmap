@@ -6,6 +6,7 @@ import { Legend } from './ui/Legend';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { StatusBanner } from './ui/StatusBanner';
 import { useRoadmapStore } from './store/roadmapStore';
+import { useSettingsStore } from './store/settingsStore';
 import { useAuthStore, getAccessToken } from './store/authStore';
 import { handleOAuthCallback, loadCurrentUser, scheduleRefresh } from './auth/session';
 import { ThemeProvider } from './ui/ThemeProvider';
@@ -23,7 +24,8 @@ function writeIssueToUrl(issueId: string): void {
 
 function Shell() {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { roadmap, showResolved, issueId, build, setIssueId } = useRoadmapStore();
+  const { roadmap, issueId, build, setIssueId } = useRoadmapStore();
+  const showResolved = useSettingsStore((s) => s.settings.showResolved);
   const token = useAuthStore((s) => s.token);
   const { fitView } = useReactFlow();
   const booted = useRef(false);

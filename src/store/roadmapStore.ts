@@ -20,9 +20,7 @@ interface RoadmapState {
   roadmap: Roadmap | null;
   error: Error | null;
   progress: number;
-  showResolved: boolean;
   setIssueId(id: string): void;
-  setShowResolved(v: boolean): void;
   build(issueId: string): Promise<void>;
   cancel(): void;
 }
@@ -35,12 +33,8 @@ export const useRoadmapStore = create<RoadmapState>()((set) => ({
   roadmap: null,
   error: null,
   progress: 0,
-  showResolved: true,
   setIssueId(issueId) {
     set({ issueId });
-  },
-  setShowResolved(showResolved) {
-    set({ showResolved });
   },
   async build(rawId) {
     const issueId = rawId.trim().toUpperCase();
@@ -48,6 +42,8 @@ export const useRoadmapStore = create<RoadmapState>()((set) => ({
     controller = new AbortController();
     const { signal } = controller;
     set({ issueId, status: 'loading', error: null, progress: 0, roadmap: null });
+    // Remembered as soon as it is asked for: the input should come back even if the build fails.
+    useSettingsStore.getState().update({ lastIssueId: issueId });
 
     const token = getAccessToken();
     if (!token) {

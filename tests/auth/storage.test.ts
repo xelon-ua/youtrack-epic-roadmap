@@ -30,6 +30,8 @@ describe('settings', () => {
       colorScheme: 'youtrack' as const,
       theme: 'dark' as const,
       criticalPath: true,
+      lastIssueId: 'WMS-42',
+      showResolved: false,
     };
     saveSettings(settings);
     expect(loadSettings()).toEqual(settings);
@@ -45,6 +47,16 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.criticalPath).toBe(false);
     localStorage.setItem('yer.settings', JSON.stringify({ criticalPath: 'yes' }));
     expect(loadSettings().criticalPath).toBe(false);
+  });
+  it('defaults the last issue id to empty and rejects non-strings', () => {
+    expect(DEFAULT_SETTINGS.lastIssueId).toBe('');
+    localStorage.setItem('yer.settings', JSON.stringify({ lastIssueId: 42 }));
+    expect(loadSettings().lastIssueId).toBe('');
+  });
+  it('defaults show resolved to on and rejects non-booleans', () => {
+    expect(DEFAULT_SETTINGS.showResolved).toBe(true);
+    localStorage.setItem('yer.settings', JSON.stringify({ showResolved: 'yes' }));
+    expect(loadSettings().showResolved).toBe(true);
   });
   it('defaults the theme to system and rejects unknown values', () => {
     expect(DEFAULT_SETTINGS.theme).toBe('system');

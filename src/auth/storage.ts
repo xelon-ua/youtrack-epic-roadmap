@@ -16,6 +16,10 @@ export interface Settings {
   theme: ThemePreference;
   /** Outline the longest chain of issues leading to the root epic. */
   criticalPath: boolean;
+  /** The issue last built, offered as the input's initial value on the next visit. */
+  lastIssueId: string;
+  /** Keep resolved issues on the map. */
+  showResolved: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -25,6 +29,8 @@ export const DEFAULT_SETTINGS: Settings = {
   colorScheme: 'semantic',
   theme: 'system',
   criticalPath: false,
+  lastIssueId: '',
+  showResolved: true,
 };
 
 export interface StoredToken {
@@ -61,6 +67,8 @@ export function loadSettings(): Settings {
   if (!COLOR_SCHEMES.includes(settings.colorScheme)) settings.colorScheme = DEFAULT_SETTINGS.colorScheme;
   if (!THEME_PREFERENCES.includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
   if (typeof settings.criticalPath !== 'boolean') settings.criticalPath = DEFAULT_SETTINGS.criticalPath;
+  if (typeof settings.lastIssueId !== 'string') settings.lastIssueId = DEFAULT_SETTINGS.lastIssueId;
+  if (typeof settings.showResolved !== 'boolean') settings.showResolved = DEFAULT_SETTINGS.showResolved;
   return settings;
 }
 

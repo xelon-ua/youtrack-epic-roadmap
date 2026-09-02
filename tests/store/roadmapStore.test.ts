@@ -21,7 +21,7 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
-  useSettingsStore.getState().update({ baseUrl: 'https://x', clientId: '', permanentToken: '' });
+  useSettingsStore.getState().update({ baseUrl: 'https://x', clientId: '', permanentToken: '', lastIssueId: '' });
   useRoadmapStore.setState({ status: 'idle', roadmap: null, error: null, progress: 0, issueId: '' });
 });
 
@@ -50,8 +50,10 @@ describe('roadmapStore', () => {
     expect(useRoadmapStore.getState().error?.name).toBe('IssueNotFoundError');
   });
 
-  it('toggles showResolved', () => {
-    useRoadmapStore.getState().setShowResolved(false);
-    expect(useRoadmapStore.getState().showResolved).toBe(false);
+  it('remembers the normalised issue id in settings', async () => {
+    useSettingsStore.getState().update({ permanentToken: 'perm' });
+    await useRoadmapStore.getState().build(' ep-1 ');
+    expect(useSettingsStore.getState().settings.lastIssueId).toBe('EP-1');
+    expect(JSON.parse(localStorage.getItem('yer.settings')!).lastIssueId).toBe('EP-1');
   });
 });
