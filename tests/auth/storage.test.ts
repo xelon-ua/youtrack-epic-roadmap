@@ -29,6 +29,7 @@ describe('settings', () => {
       permanentToken: '',
       colorScheme: 'youtrack' as const,
       theme: 'dark' as const,
+      criticalPath: true,
     };
     saveSettings(settings);
     expect(loadSettings()).toEqual(settings);
@@ -39,6 +40,11 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.colorScheme).toBe('semantic');
     localStorage.setItem('yer.settings', JSON.stringify({ colorScheme: 'rainbow' }));
     expect(loadSettings().colorScheme).toBe('semantic');
+  });
+  it('defaults the critical path switch to off and rejects non-booleans', () => {
+    expect(DEFAULT_SETTINGS.criticalPath).toBe(false);
+    localStorage.setItem('yer.settings', JSON.stringify({ criticalPath: 'yes' }));
+    expect(loadSettings().criticalPath).toBe(false);
   });
   it('defaults the theme to system and rejects unknown values', () => {
     expect(DEFAULT_SETTINGS.theme).toBe('system');

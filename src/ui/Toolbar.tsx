@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import * as Switch from '@radix-ui/react-switch';
 import { useRoadmapStore } from '../store/roadmapStore';
 import { useSettingsStore } from '../store/settingsStore';
+import { useCriticalPathStore } from '../store/criticalPathStore';
 import type { ColorScheme, ThemePreference } from '../auth/storage';
 import { AuthStatus } from './AuthStatus';
 import { nextThemePreference } from './theme';
@@ -12,6 +13,8 @@ export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void;
   const { issueId, status, roadmap, showResolved, build, setShowResolved } = useRoadmapStore();
   const colorScheme = useSettingsStore((s) => s.settings.colorScheme);
   const theme = useSettingsStore((s) => s.settings.theme);
+  const showCriticalPath = useSettingsStore((s) => s.settings.criticalPath);
+  const criticalCount = useCriticalPathStore((s) => s.ids.size);
   const updateSettings = useSettingsStore((s) => s.update);
   const [draft, setDraft] = useState(issueId);
   // Reset the draft when the store's issue id changes (URL param, OAuth state).
@@ -61,6 +64,17 @@ export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void;
         Show resolved
       </label>
       <label className="flex items-center gap-2">
+        <Switch.Root
+          checked={showCriticalPath}
+          onCheckedChange={(checked) => updateSettings({ criticalPath: checked })}
+          aria-label="Critical path"
+          className="relative h-5 w-9 rounded-full bg-gray-300 data-[state=checked]:bg-amber-500 dark:bg-slate-600"
+        >
+          <Switch.Thumb className="block h-4 w-4 translate-x-0.5 rounded-full bg-white transition data-[state=checked]:translate-x-4" />
+        </Switch.Root>
+        Critical path
+      </label>
+      <label className="flex items-center gap-2">
         Colours
         <select
           value={colorScheme}
@@ -77,6 +91,7 @@ export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void;
       {roadmap && (
         <span className="text-gray-500 dark:text-slate-400">
           {roadmap.nodes.size} issues · {hidden} hidden
+          {showCriticalPath && ` · ${criticalCount} on critical path`}
         </span>
       )}
       <div className="ml-auto flex items-center gap-3">

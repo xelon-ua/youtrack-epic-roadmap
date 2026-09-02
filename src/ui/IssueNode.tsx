@@ -6,6 +6,7 @@ import type { ColorScheme } from '../auth/storage';
 import { NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
 import { useSettingsStore } from '../store/settingsStore';
 import { useIsHighlighted } from '../store/hoverStore';
+import { useIsCritical } from '../store/criticalPathStore';
 import { borderClass, kindLabel, nodeColors } from './nodeStyle';
 import { useTheme, type Theme } from './theme';
 
@@ -17,11 +18,13 @@ export type IssueFlowNode = Node<IssueNodeData, 'issue'>;
 export function IssueNodeCard({
   node,
   highlighted,
+  critical,
   scheme,
   theme,
 }: {
   node: RoadmapNode;
   highlighted: boolean;
+  critical: boolean;
   scheme: ColorScheme;
   theme: Theme;
 }) {
@@ -40,6 +43,8 @@ export function IssueNodeCard({
               borderClass(node.kind),
               node.resolved ? 'opacity-70' : '',
               highlighted ? 'ring-4 ring-blue-400' : '',
+              // An outline rather than a ring, so a hovered card can carry both marks at once.
+              critical ? 'outline-2 outline-offset-2 outline-amber-500' : '',
             ].join(' ')}
           >
             {/* Status accent: the fill alone stops separating cards once the map is zoomed out. */}
@@ -84,10 +89,11 @@ function IssueNodeComponent({ id, data }: NodeProps<IssueFlowNode>) {
   const scheme = useSettingsStore((s) => s.settings.colorScheme);
   const theme = useTheme();
   const highlighted = useIsHighlighted(id);
+  const critical = useIsCritical(id);
   return (
     <>
       <Handle type="target" position={Position.Left} className="!bg-gray-500" />
-      <IssueNodeCard node={data.node} highlighted={highlighted} scheme={scheme} theme={theme} />
+      <IssueNodeCard node={data.node} highlighted={highlighted} critical={critical} scheme={scheme} theme={theme} />
       <Handle type="source" position={Position.Right} className="!bg-gray-500" />
     </>
   );

@@ -11,6 +11,7 @@ const KIND_ROWS: { cls: string; text: string }[] = [
 
 export function Legend() {
   const scheme = useSettingsStore((s) => s.settings.colorScheme);
+  const showCriticalPath = useSettingsStore((s) => s.settings.criticalPath);
   const theme = useTheme();
   return (
     <div className="absolute bottom-3 left-3 z-10 rounded bg-white/90 p-3 text-xs text-gray-700 shadow dark:bg-slate-800/90 dark:text-slate-200">
@@ -36,6 +37,12 @@ export function Legend() {
         ))
       ) : (
         <div>Fill and stripe = YouTrack state colour.</div>
+      )}
+      {showCriticalPath && (
+        <div className="mt-2 flex items-center gap-2">
+          <span className="inline-block h-4 w-8 rounded bg-white outline-2 outline-offset-2 outline-amber-500 dark:bg-slate-900" />
+          <span>On the critical path</span>
+        </div>
       )}
       <div className="mt-1">Resolved issues are faded.</div>
       <div>Solid arrow: prerequisite → dependent.</div>

@@ -10,8 +10,10 @@ Live: https://xelon-ua.github.io/youtrack-epic-roadmap/
 Give it an epic id (e.g. `ACME-102`). It collects every subtask recursively, follows
 `Depend` links to prerequisites outside the epic (recursively) and to dependents outside
 the epic (one level), and lays the result out in layers: leftmost issues have no
-unresolved prerequisites. Hide resolved issues to see what can be started now. The theme button in the toolbar
-switches between following the system, light and dark.
+unresolved prerequisites. Hide resolved issues to see what can be started now. The
+critical path switch outlines the longest chain of issues standing between you and a
+finished epic. The theme button in the toolbar switches between following the system,
+light and dark.
 
 ![An epic laid out as a dependency graph, with resolved issues hidden](docs/images/roadmap-example.png)
 

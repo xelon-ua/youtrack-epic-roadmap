@@ -14,6 +14,8 @@ export interface Settings {
   permanentToken: string;
   colorScheme: ColorScheme;
   theme: ThemePreference;
+  /** Outline the longest chain of issues leading to the root epic. */
+  criticalPath: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -22,6 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   permanentToken: '',
   colorScheme: 'semantic',
   theme: 'system',
+  criticalPath: false,
 };
 
 export interface StoredToken {
@@ -57,6 +60,7 @@ export function loadSettings(): Settings {
   // Storage is hand-editable and outlives releases; an unknown value must not reach the renderer.
   if (!COLOR_SCHEMES.includes(settings.colorScheme)) settings.colorScheme = DEFAULT_SETTINGS.colorScheme;
   if (!THEME_PREFERENCES.includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
+  if (typeof settings.criticalPath !== 'boolean') settings.criticalPath = DEFAULT_SETTINGS.criticalPath;
   return settings;
 }
 
