@@ -54,17 +54,30 @@ cannot read become "(no access)" placeholders and are not traversed.
 
 ## Status colours
 
-A card carries its status as a light fill plus a saturated 6 px stripe on the left; the
+A card carries its status as a tinted fill plus a saturated 6 px stripe on the left; the
 border is reserved for the node class above. The **Colours** control in the toolbar picks
-the scheme (persisted in `Settings.colorScheme`):
+the scheme (persisted in `Settings.colorScheme`); every palette exists in a light and a
+dark variant, chosen by the active theme:
 
 - `semantic` (default) — `src/ui/statusBucket.ts` sorts an issue into one of four buckets.
   `resolved` from YouTrack decides `done` outright; for the rest the state name is matched
   case-insensitively (`verify|review|qa|test|check` → review, checked first so "code review
   in progress" is review; `progress|in work|development|doing|ongoing|wip` → in progress;
-  anything else, including a missing state → not started). Each bucket has a fixed palette.
-- `youtrack` — the state's own colour: undiluted for the stripe, mixed 75 % with white for
-  the fill so dark text stays readable. States without a colour fall back to neutral grey.
+  anything else, including a missing state → not started). Each bucket has a fixed palette
+  per theme in `BUCKET_STYLES`.
+- `youtrack` — the state's own colour: undiluted for the stripe, and mixed into the page
+  surface for the fill (75 % white in the light theme, 72 % of the dark surface in the dark
+  one) so the text on it stays readable. States without a colour fall back to neutral grey.
+
+## Theme
+
+The toolbar's theme button cycles system → light → dark, persisted in `Settings.theme`.
+`src/ui/theme.ts` resolves the preference against `prefers-color-scheme` (live, so `system`
+follows the OS without a reload) and writes the result onto `<html>` as the `dark` class
+plus `color-scheme`. `ThemeProvider` resolves it once and hands it down through context:
+issue cards must not each own a media-query listener. Tailwind's `dark:` variant is bound
+to that class in `src/index.css`, and a small inline script in `index.html` applies the
+stored theme before the first paint so the app never flashes white.
 
 ## Auth flow
 

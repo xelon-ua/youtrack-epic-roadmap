@@ -16,25 +16,37 @@ import { projectRoadmap } from '../graph/filter';
 import { layoutRoadmap, NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
 import { useHoverStore } from '../store/hoverStore';
 import { IssueNode, type IssueFlowNode } from './IssueNode';
+import { useTheme, type Theme } from './theme';
 
 type LaneNode = Node<{ label: string }, 'lane'>;
 
 function LaneLabel({ data }: NodeProps<LaneNode>) {
   return (
-    <div className="select-none text-sm font-semibold uppercase tracking-wide text-gray-500">{data.label}</div>
+    <div className="select-none text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+      {data.label}
+    </div>
   );
 }
 
 const nodeTypes: NodeTypes = { issue: IssueNode, lane: LaneLabel };
 
-const EDGE_IDLE = '#9ca3af';
-const EDGE_ACTIVE = '#2563eb';
-/* Hierarchy edges are inferred, not links the user drew, so they stay quieter. */
-const EDGE_SUBTASK_IDLE = '#d1d5db';
+interface EdgeColors {
+  idle: string;
+  active: string;
+  /* Hierarchy edges are inferred, not links the user drew, so they stay quieter. */
+  subtask: string;
+}
+
+const EDGE_COLORS: Record<Theme, EdgeColors> = {
+  light: { idle: '#9ca3af', active: '#2563eb', subtask: '#d1d5db' },
+  dark: { idle: '#64748b', active: '#60a5fa', subtask: '#3f4a5f' },
+};
+
 const EDGE_SUBTASK_DASH = '6 4';
 
 export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; showResolved: boolean }) {
   const hoveredId = useHoverStore((s) => s.hoveredId);
+  const theme = useTheme();
   const setHovered = useHoverStore((s) => s.setHovered);
   const { fitView } = useReactFlow();
 
@@ -80,7 +92,8 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
       projection.edges.map((e) => {
         const active = hoveredId !== null && (e.from === hoveredId || e.to === hoveredId);
         const hierarchy = e.kind === 'subtask';
-        const color = active ? EDGE_ACTIVE : hierarchy ? EDGE_SUBTASK_IDLE : EDGE_IDLE;
+        const palette = EDGE_COLORS[theme];
+        const color = active ? palette.active : hierarchy ? palette.subtask : palette.idle;
         return {
           id: `${e.from}>${e.to}`,
           source: e.from,
@@ -94,7 +107,7 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
           animated: active && !hierarchy,
         };
       }),
-    [projection, hoveredId],
+    [projection, hoveredId, theme],
   );
 
   const enterNode = (id: string): void => {
@@ -127,6 +140,7 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
       }}
       onNodeMouseLeave={() => setHovered(null)}
       minZoom={0.1}
+      colorMode={theme}
       fitView
     >
       <Background />

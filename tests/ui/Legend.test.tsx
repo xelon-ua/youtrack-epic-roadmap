@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { Legend } from '../../src/ui/Legend';
 import { useSettingsStore } from '../../src/store/settingsStore';
 import { DEFAULT_SETTINGS } from '../../src/auth/storage';
-import { BUCKET_ORDER, BUCKET_STYLES } from '../../src/ui/statusBucket';
+import { BUCKET_LABELS, BUCKET_ORDER } from '../../src/ui/statusBucket';
 
 beforeEach(() => {
   useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS } });
@@ -25,7 +25,7 @@ describe('Legend', () => {
   it('lists every status bucket in the semantic scheme', () => {
     render(<Legend />);
     for (const bucket of BUCKET_ORDER) {
-      expect(screen.getByText(BUCKET_STYLES[bucket].label)).toBeInTheDocument();
+      expect(screen.getByText(BUCKET_LABELS[bucket])).toBeInTheDocument();
     }
   });
 
@@ -33,6 +33,6 @@ describe('Legend', () => {
     useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, colorScheme: 'youtrack' } });
     render(<Legend />);
     expect(screen.getByText(/YouTrack state colour/i)).toBeInTheDocument();
-    expect(screen.queryByText(BUCKET_STYLES['in-progress'].label)).not.toBeInTheDocument();
+    expect(screen.queryByText(BUCKET_LABELS['in-progress'])).not.toBeInTheDocument();
   });
 });

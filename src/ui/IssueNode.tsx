@@ -7,6 +7,7 @@ import { NODE_HEIGHT, NODE_WIDTH } from '../graph/layout';
 import { useSettingsStore } from '../store/settingsStore';
 import { useIsHighlighted } from '../store/hoverStore';
 import { borderClass, kindLabel, nodeColors } from './nodeStyle';
+import { useTheme, type Theme } from './theme';
 
 export interface IssueNodeData extends Record<string, unknown> {
   node: RoadmapNode;
@@ -17,13 +18,15 @@ export function IssueNodeCard({
   node,
   highlighted,
   scheme,
+  theme,
 }: {
   node: RoadmapNode;
   highlighted: boolean;
   scheme: ColorScheme;
+  theme: Theme;
 }) {
   const label = kindLabel(node.kind);
-  const colors = nodeColors(node, scheme);
+  const colors = nodeColors(node, scheme, theme);
   return (
     <Tooltip.Provider delayDuration={300}>
       <Tooltip.Root>
@@ -57,7 +60,7 @@ export function IssueNodeCard({
         <Tooltip.Portal>
           <Tooltip.Content
             side="top"
-            className="z-50 max-w-sm rounded bg-gray-900 px-3 py-2 text-xs text-white shadow-lg"
+            className="z-50 max-w-sm rounded bg-gray-900 px-3 py-2 text-xs text-white shadow-lg dark:bg-slate-700"
           >
             <div className="font-semibold">
               {node.id}: {node.summary}
@@ -79,11 +82,12 @@ export function IssueNodeCard({
  */
 function IssueNodeComponent({ id, data }: NodeProps<IssueFlowNode>) {
   const scheme = useSettingsStore((s) => s.settings.colorScheme);
+  const theme = useTheme();
   const highlighted = useIsHighlighted(id);
   return (
     <>
       <Handle type="target" position={Position.Left} className="!bg-gray-500" />
-      <IssueNodeCard node={data.node} highlighted={highlighted} scheme={scheme} />
+      <IssueNodeCard node={data.node} highlighted={highlighted} scheme={scheme} theme={theme} />
       <Handle type="source" position={Position.Right} className="!bg-gray-500" />
     </>
   );

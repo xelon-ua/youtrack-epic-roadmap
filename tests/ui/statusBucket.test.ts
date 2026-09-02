@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BUCKET_ORDER, BUCKET_STYLES, mixWithWhite, statusBucket } from '../../src/ui/statusBucket';
+import { BUCKET_LABELS, BUCKET_ORDER, BUCKET_STYLES, mixWith, statusBucket } from '../../src/ui/statusBucket';
 import type { RoadmapNode } from '../../src/graph/model';
 
 const base: RoadmapNode = {
@@ -54,31 +54,43 @@ describe('statusBucket', () => {
 });
 
 describe('BUCKET_STYLES', () => {
-  it('covers every bucket with a distinct accent', () => {
+  it('covers every bucket in both themes with a distinct accent', () => {
     expect(BUCKET_ORDER).toEqual(['not-started', 'in-progress', 'review', 'done']);
-    const accents = BUCKET_ORDER.map((b) => BUCKET_STYLES[b].accent);
-    expect(new Set(accents).size).toBe(BUCKET_ORDER.length);
+    for (const theme of ['light', 'dark'] as const) {
+      const accents = BUCKET_ORDER.map((b) => BUCKET_STYLES[theme][b].accent);
+      expect(new Set(accents).size).toBe(BUCKET_ORDER.length);
+      for (const b of BUCKET_ORDER) {
+        expect(BUCKET_STYLES[theme][b].background).toMatch(/^#[0-9a-f]{6}$/);
+        expect(BUCKET_STYLES[theme][b].color).toMatch(/^#[0-9a-f]{6}$/);
+        expect(BUCKET_LABELS[b]).toBeTruthy();
+      }
+    }
+  });
+
+  it('gives the dark theme its own fills', () => {
     for (const b of BUCKET_ORDER) {
-      expect(BUCKET_STYLES[b].background).toMatch(/^#[0-9a-f]{6}$/);
-      expect(BUCKET_STYLES[b].label).toBeTruthy();
+      expect(BUCKET_STYLES.dark[b].background).not.toBe(BUCKET_STYLES.light[b].background);
     }
   });
 });
 
-describe('mixWithWhite', () => {
-  it('interpolates towards white', () => {
-    expect(mixWithWhite('#000000', 0)).toBe('#000000');
-    expect(mixWithWhite('#000000', 0.75)).toBe('#bfbfbf');
-    expect(mixWithWhite('#123456', 1)).toBe('#ffffff');
+describe('mixWith', () => {
+  it('interpolates towards the given base', () => {
+    expect(mixWith('#000000', 0, '#ffffff')).toBe('#000000');
+    expect(mixWith('#000000', 0.75, '#ffffff')).toBe('#bfbfbf');
+    expect(mixWith('#123456', 1, '#ffffff')).toBe('#ffffff');
+    expect(mixWith('#ffffff', 1, '#0f172a')).toBe('#0f172a');
+    expect(mixWith('#ffffff', 0.5, '#000000')).toBe('#808080');
   });
 
   it('accepts a hex colour without the hash and normalises the case', () => {
-    expect(mixWithWhite('2563EB', 0)).toBe('#2563eb');
+    expect(mixWith('2563EB', 0, '#ffffff')).toBe('#2563eb');
   });
 
   it('returns null for values it cannot parse', () => {
-    expect(mixWithWhite('red', 0.5)).toBeNull();
-    expect(mixWithWhite('#12345', 0.5)).toBeNull();
-    expect(mixWithWhite('', 0.5)).toBeNull();
+    expect(mixWith('red', 0.5, '#ffffff')).toBeNull();
+    expect(mixWith('#12345', 0.5, '#ffffff')).toBeNull();
+    expect(mixWith('', 0.5, '#ffffff')).toBeNull();
+    expect(mixWith('#123456', 0.5, 'white')).toBeNull();
   });
 });

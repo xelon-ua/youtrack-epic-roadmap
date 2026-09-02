@@ -5,6 +5,22 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YouTrack Epic Roadmap</title>
+    <script>
+      // Paint the stored theme before the first frame; React applies the same thing once it mounts.
+      (function () {
+        try {
+          var settings = JSON.parse(localStorage.getItem('yer.settings') || '{}') || {};
+          var preference = settings.theme || 'system';
+          var dark =
+            preference === 'dark' ||
+            (preference !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          document.documentElement.classList.toggle('dark', dark);
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {
+          // Storage or matchMedia unavailable: the light default is fine.
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

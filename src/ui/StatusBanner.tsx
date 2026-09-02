@@ -7,7 +7,7 @@ export function StatusBanner({ onOpenSettings }: { onOpenSettings(): void }) {
 
   if (status === 'loading') {
     return (
-      <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 text-sm text-blue-900">
+      <div className="flex items-center gap-3 bg-blue-50 px-4 py-2 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">
         <span>Fetched {progress} issues…</span>
         <button type="button" onClick={cancel} className="underline">
           Cancel
@@ -18,7 +18,7 @@ export function StatusBanner({ onOpenSettings }: { onOpenSettings(): void }) {
   if (status === 'error' && error) {
     const text = describeError(error);
     return (
-      <div className="space-y-1 bg-red-50 px-4 py-2 text-sm text-red-900" role="alert">
+      <div className="space-y-1 bg-red-50 px-4 py-2 text-sm text-red-900 dark:bg-red-950 dark:text-red-100" role="alert">
         <div className="font-semibold">{text.title}</div>
         {text.hint && <div>{text.hint}</div>}
         {text.action === 'sign-in' && (
@@ -36,7 +36,7 @@ export function StatusBanner({ onOpenSettings }: { onOpenSettings(): void }) {
   }
   if (status === 'ready' && roadmap && (roadmap.truncated || roadmap.cycles.length > 0)) {
     return (
-      <div className="space-y-1 bg-amber-50 px-4 py-2 text-sm text-amber-900">
+      <div className="space-y-1 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">
         {roadmap.truncated && <div>Graph truncated: stopped after 500 issues. The map is incomplete.</div>}
         {roadmap.cycles.map((c) => (
           <div key={c.join(',')}>

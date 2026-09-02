@@ -3,11 +3,17 @@ export type ColorScheme = 'semantic' | 'youtrack';
 
 const COLOR_SCHEMES: ColorScheme[] = ['semantic', 'youtrack'];
 
+/** `system` follows the OS setting; the other two pin the theme for this browser. */
+export type ThemePreference = 'system' | 'light' | 'dark';
+
+export const THEME_PREFERENCES: ThemePreference[] = ['system', 'light', 'dark'];
+
 export interface Settings {
   baseUrl: string;
   clientId: string;
   permanentToken: string;
   colorScheme: ColorScheme;
+  theme: ThemePreference;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -15,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   clientId: '',
   permanentToken: '',
   colorScheme: 'semantic',
+  theme: 'system',
 };
 
 export interface StoredToken {
@@ -47,8 +54,9 @@ function write(storage: Storage, key: string, value: unknown): void {
 export function loadSettings(): Settings {
   const stored = read<Partial<Settings>>(localStorage, SETTINGS_KEY);
   const settings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
-  // Storage is hand-editable and outlives releases; an unknown scheme must not reach the renderer.
+  // Storage is hand-editable and outlives releases; an unknown value must not reach the renderer.
   if (!COLOR_SCHEMES.includes(settings.colorScheme)) settings.colorScheme = DEFAULT_SETTINGS.colorScheme;
+  if (!THEME_PREFERENCES.includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
   return settings;
 }
 

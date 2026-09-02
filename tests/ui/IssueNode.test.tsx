@@ -21,7 +21,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('IssueNodeCard', () => {
   it('shows id, summary and state, and opens the issue on click', () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null);
-    render(<IssueNodeCard node={node} highlighted={false} scheme="semantic" />);
+    render(<IssueNodeCard node={node} highlighted={false} scheme="semantic" theme="light" />);
     expect(screen.getByText('WMS-987')).toBeInTheDocument();
     expect(screen.getByText('Phase 1: multi-db core')).toBeInTheDocument();
     expect(screen.getByText('In Progress')).toBeInTheDocument();
@@ -31,22 +31,29 @@ describe('IssueNodeCard', () => {
 
   it('dims resolved issues and labels external ones', () => {
     render(
-      <IssueNodeCard node={{ ...node, resolved: true, kind: 'external-dependent' }} highlighted={false} scheme="semantic" />,
+      <IssueNodeCard node={{ ...node, resolved: true, kind: 'external-dependent' }} highlighted={false} scheme="semantic" theme="light" />,
     );
     expect(screen.getByRole('button')).toHaveClass('opacity-70');
     expect(screen.getByText('outside epic ↗')).toBeInTheDocument();
   });
 
   it('fills the card and the accent stripe from the status bucket', () => {
-    render(<IssueNodeCard node={node} highlighted={false} scheme="semantic" />);
-    const { background, accent } = BUCKET_STYLES['in-progress'];
+    render(<IssueNodeCard node={node} highlighted={false} scheme="semantic" theme="light" />);
+    const { background, accent } = BUCKET_STYLES.light['in-progress'];
+    expect(screen.getByRole('button')).toHaveStyle({ background });
+    expect(screen.getByTestId('status-stripe')).toHaveStyle({ background: accent });
+  });
+
+  it('takes its fill from the dark palette in the dark theme', () => {
+    render(<IssueNodeCard node={node} highlighted={false} scheme="semantic" theme="dark" />);
+    const { background, accent } = BUCKET_STYLES.dark['in-progress'];
     expect(screen.getByRole('button')).toHaveStyle({ background });
     expect(screen.getByTestId('status-stripe')).toHaveStyle({ background: accent });
   });
 
   it('uses the YouTrack state colour in the youtrack scheme', () => {
-    render(<IssueNodeCard node={node} highlighted={false} scheme="youtrack" />);
+    render(<IssueNodeCard node={node} highlighted={false} scheme="youtrack" theme="light" />);
     expect(screen.getByTestId('status-stripe')).toHaveStyle({ background: '#ffd700' });
-    expect(screen.getByRole('button')).not.toHaveStyle({ background: BUCKET_STYLES['in-progress'].background });
+    expect(screen.getByRole('button')).not.toHaveStyle({ background: BUCKET_STYLES.light['in-progress'].background });
   });
 });
