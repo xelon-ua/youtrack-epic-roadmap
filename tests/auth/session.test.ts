@@ -16,11 +16,11 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('handleOAuthCallback', () => {
   it('stores the token, strips the hash and returns the issue id from state', () => {
-    const state = createState('WMS-985');
+    const state = createState('ACME-102');
     savePendingState(state);
     window.location.hash = `#access_token=tok&token_type=Bearer&expires_in=3600&state=${state}`;
     const result = handleOAuthCallback();
-    expect(result).toEqual({ issueId: 'WMS-985' });
+    expect(result).toEqual({ issueId: 'ACME-102' });
     expect(loadToken()?.accessToken).toBe('tok');
     expect(loadToken()!.expiresAt).toBeGreaterThan(Date.now() + 3_500_000);
     expect(window.location.hash).toBe('');

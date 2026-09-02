@@ -15,7 +15,7 @@ describe('Toolbar', () => {
     const build = vi.fn().mockResolvedValue(undefined);
     useRoadmapStore.setState({ build });
     render(<Toolbar onOpenSettings={() => {}} onFitView={() => {}} />);
-    fireEvent.change(screen.getByPlaceholderText('WMS-985'), { target: { value: 'wms-1' } });
+    fireEvent.change(screen.getByPlaceholderText('ACME-102'), { target: { value: 'wms-1' } });
     fireEvent.submit(screen.getByRole('form'));
     expect(build).toHaveBeenCalledWith('wms-1');
   });

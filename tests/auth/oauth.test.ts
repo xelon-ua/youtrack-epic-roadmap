@@ -12,10 +12,10 @@ describe('hubUrl', () => {
 
 describe('state', () => {
   it('round-trips the issue id and carries a random nonce', () => {
-    const a = createState('WMS-985');
-    const b = createState('WMS-985');
+    const a = createState('ACME-102');
+    const b = createState('ACME-102');
     expect(a).not.toBe(b);
-    expect(parseState(a)).toMatchObject({ issueId: 'WMS-985' });
+    expect(parseState(a)).toMatchObject({ issueId: 'ACME-102' });
     expect(parseState(a)!.nonce).toHaveLength(32);
     expect(parseState(createState(null))!.issueId).toBeNull();
   });
