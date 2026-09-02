@@ -12,7 +12,7 @@ const node: RoadmapNode = {
   state: { name: 'In Progress', background: '#ffd700', foreground: '#000000' },
   assignee: 'Ann',
   project: 'WMS',
-  parentId: 'WMS-985',
+  parentId: 'ACME-102',
   url: 'https://x/issue/WMS-987',
 };
 

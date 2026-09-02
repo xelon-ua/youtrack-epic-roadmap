@@ -7,7 +7,7 @@ Live: https://xelon-ua.github.io/youtrack-epic-roadmap/
 
 ## What it does
 
-Give it an epic id (e.g. `WMS-985`). It collects every subtask recursively, follows
+Give it an epic id (e.g. `ACME-102`). It collects every subtask recursively, follows
 `Depend` links to prerequisites outside the epic (recursively) and to dependents outside
 the epic (one level), and lays the result out in layers: leftmost issues have no
 unresolved prerequisites. Hide resolved issues to see what can be started now.

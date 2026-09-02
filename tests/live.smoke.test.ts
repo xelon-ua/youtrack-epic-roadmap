@@ -8,7 +8,7 @@ import { layoutRoadmap } from '../src/graph/layout';
 /**
  * Optional end-to-end check against a real YouTrack instance. Skipped unless
  * YT_URL, YT_TOKEN and YT_ISSUE are set, e.g.
- *   YT_URL=https://x.youtrack.cloud YT_TOKEN=perm-... YT_ISSUE=WMS-985 npm test -- --run tests/live.smoke.test.ts
+ *   YT_URL=https://x.youtrack.cloud YT_TOKEN=perm-... YT_ISSUE=ACME-102 npm test -- --run tests/live.smoke.test.ts
  */
 const url = process.env.YT_URL;
 const token = process.env.YT_TOKEN;

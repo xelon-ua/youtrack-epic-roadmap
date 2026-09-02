@@ -33,7 +33,7 @@ export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void;
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="WMS-985"
+          placeholder="ACME-102"
           className="w-36 rounded border px-2 py-1 font-mono"
           aria-label="Issue ID"
         />
