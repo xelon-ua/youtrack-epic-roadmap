@@ -1,3 +1,5 @@
+import { rememberIssue } from '../store/recentIssues';
+
 /** `semantic`: our own status palette. `youtrack`: the colours configured on the states. */
 export type ColorScheme = 'semantic' | 'youtrack';
 
@@ -8,6 +10,12 @@ export type ThemePreference = 'system' | 'light' | 'dark';
 
 export const THEME_PREFERENCES: ThemePreference[] = ['system', 'light', 'dark'];
 
+/** An issue offered by the input's history: its id, plus the summary learnt when it was built. */
+export interface RecentIssue {
+  id: string;
+  summary: string;
+}
+
 export interface Settings {
   baseUrl: string;
   clientId: string;
@@ -16,8 +24,8 @@ export interface Settings {
   theme: ThemePreference;
   /** Outline the longest chain of issues leading to the root epic. */
   criticalPath: boolean;
-  /** The issue last built, offered as the input's initial value on the next visit. */
-  lastIssueId: string;
+  /** Issues built before, newest first: the input's history. */
+  recentIssues: RecentIssue[];
   /** Keep resolved issues on the map. */
   showResolved: boolean;
 }
@@ -29,7 +37,7 @@ export const DEFAULT_SETTINGS: Settings = {
   colorScheme: 'semantic',
   theme: 'system',
   criticalPath: false,
-  lastIssueId: '',
+  recentIssues: [],
   showResolved: true,
 };
 
@@ -60,6 +68,20 @@ function write(storage: Storage, key: string, value: unknown): void {
   }
 }
 
+/** Storage is hand-editable and outlives releases: keep only well-formed, unique entries. */
+function sanitizeRecentIssues(value: unknown): RecentIssue[] {
+  if (!Array.isArray(value)) return [];
+  const wellFormed = value.filter(
+    (i): i is RecentIssue =>
+      typeof i === 'object' &&
+      i !== null &&
+      typeof (i as RecentIssue).id === 'string' &&
+      typeof (i as RecentIssue).summary === 'string',
+  );
+  // Oldest last: fold from the end so rememberIssue rebuilds the stored order, deduplicated.
+  return wellFormed.reduceRight<RecentIssue[]>((list, issue) => rememberIssue(list, issue), []);
+}
+
 export function loadSettings(): Settings {
   const stored = read<Partial<Settings>>(localStorage, SETTINGS_KEY);
   const settings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
@@ -67,7 +89,12 @@ export function loadSettings(): Settings {
   if (!COLOR_SCHEMES.includes(settings.colorScheme)) settings.colorScheme = DEFAULT_SETTINGS.colorScheme;
   if (!THEME_PREFERENCES.includes(settings.theme)) settings.theme = DEFAULT_SETTINGS.theme;
   if (typeof settings.criticalPath !== 'boolean') settings.criticalPath = DEFAULT_SETTINGS.criticalPath;
-  if (typeof settings.lastIssueId !== 'string') settings.lastIssueId = DEFAULT_SETTINGS.lastIssueId;
+  settings.recentIssues = sanitizeRecentIssues(settings.recentIssues);
+  // Releases before the history remembered a single id; carry it over so it is not lost.
+  const legacyId = (stored as { lastIssueId?: unknown } | null)?.lastIssueId;
+  if (settings.recentIssues.length === 0 && typeof legacyId === 'string' && legacyId !== '') {
+    settings.recentIssues = [{ id: legacyId, summary: '' }];
+  }
   if (typeof settings.showResolved !== 'boolean') settings.showResolved = DEFAULT_SETTINGS.showResolved;
   return settings;
 }

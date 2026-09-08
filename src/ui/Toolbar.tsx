@@ -1,60 +1,31 @@
-import { useState, type FormEvent } from 'react';
 import * as Switch from '@radix-ui/react-switch';
 import { useRoadmapStore } from '../store/roadmapStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useCriticalPathStore } from '../store/criticalPathStore';
 import type { ColorScheme, ThemePreference } from '../auth/storage';
 import { AuthStatus } from './AuthStatus';
+import { IssueIdInput } from './IssueIdInput';
 import { nextThemePreference } from './theme';
 
 const THEME_ICONS: Record<ThemePreference, string> = { system: '🖥', light: '☀', dark: '☾' };
 
 export function Toolbar({ onOpenSettings, onFitView }: { onOpenSettings(): void; onFitView(): void }) {
-  const { issueId, status, roadmap, build } = useRoadmapStore();
+  const roadmap = useRoadmapStore((s) => s.roadmap);
   const colorScheme = useSettingsStore((s) => s.settings.colorScheme);
   const theme = useSettingsStore((s) => s.settings.theme);
   const showCriticalPath = useSettingsStore((s) => s.settings.criticalPath);
   const showResolved = useSettingsStore((s) => s.settings.showResolved);
-  const lastIssueId = useSettingsStore((s) => s.settings.lastIssueId);
   const criticalCount = useCriticalPathStore((s) => s.ids.size);
   const updateSettings = useSettingsStore((s) => s.update);
-  // Nothing built yet in this tab: offer the issue from the previous visit, without building it.
-  const [draft, setDraft] = useState(issueId || lastIssueId);
-  // Reset the draft when the store's issue id changes (URL param, OAuth state).
-  const [prevIssueId, setPrevIssueId] = useState(issueId);
-  if (issueId !== prevIssueId) {
-    setPrevIssueId(issueId);
-    setDraft(issueId);
-  }
 
   const hidden =
     roadmap && !showResolved
       ? [...roadmap.nodes.values()].filter((n) => n.resolved && n.id !== roadmap.rootId).length
       : 0;
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (draft.trim()) void build(draft);
-  };
-
   return (
     <header className="flex flex-wrap items-center gap-3 border-b border-gray-200 bg-white px-4 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
-      <form role="form" onSubmit={submit} className="flex items-center gap-2">
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="ACME-102"
-          className="w-36 rounded border px-2 py-1 font-mono dark:border-slate-600 dark:bg-slate-800"
-          aria-label="Issue ID"
-        />
-        <button
-          type="submit"
-          disabled={status === 'loading'}
-          className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-50"
-        >
-          {status === 'loading' ? 'Building…' : 'Build'}
-        </button>
-      </form>
+      <IssueIdInput />
       <label className="flex items-center gap-2">
         <Switch.Root
           checked={showResolved}
