@@ -104,16 +104,23 @@ stored theme before the first paint so the app never flashes white.
 ## Remembered state
 
 `Settings` (localStorage, key `yer.settings`) keeps the toolbar as you left it: the colour
-scheme, the theme, the critical path and **Show resolved** switches, and `lastIssueId` — the
-issue of the last build, written when the build starts so a failed one is remembered too.
-Because these are per browser rather than per issue, opening a different epic inherits the
-switches from the previous one.
+scheme, the theme, the critical path and **Show resolved** switches, and `recentIssues` — the
+ten issues built most recently, newest first. Because these are per browser rather than per
+issue, opening a different epic inherits the switches from the previous one.
 
-`lastIssueId` is only ever *offered*: the toolbar seeds its input with it when the store has
-no issue yet, and nothing is fetched until you press Build. Autobuilding stays the job of the
-`?issue=` parameter (or an OAuth callback carrying the id), which also decides what the URL
-says — a remembered id never rewrites it. Precedence at boot is OAuth callback → `?issue=` →
-remembered id.
+An entry is written twice. `roadmapStore.build` remembers the id as soon as the build starts,
+so a failed build is offered again; on success it writes the root epic's summary over the
+same entry, because the summary only arrives with the issue. `rememberIssue`
+(`src/store/recentIssues.ts`) owns the list rule — head of the list, no duplicates, ten at
+most — and never lets an empty summary overwrite one already learnt. Releases before the
+history remembered a single `lastIssueId`; `loadSettings` migrates it into a one-entry list.
+
+The history is only ever *offered*: `IssueIdInput` seeds its field with `recentIssues[0]` when
+the store has no issue yet, and nothing is fetched until you press Build. Focusing the field
+opens the history; typing narrows it by id or summary; picking an entry builds it immediately.
+Autobuilding otherwise stays the job of the `?issue=` parameter (or an OAuth callback carrying
+the id), which also decides what the URL says — a remembered id never rewrites it. Precedence
+at boot is OAuth callback → `?issue=` → remembered id.
 
 Loading is defensive: the store is hand-editable and outlives releases, so `loadSettings`
 replaces any value of the wrong type with its default.

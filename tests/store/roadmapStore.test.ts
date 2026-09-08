@@ -21,7 +21,7 @@ import { useSettingsStore } from '../../src/store/settingsStore';
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
-  useSettingsStore.getState().update({ baseUrl: 'https://x', clientId: '', permanentToken: '', lastIssueId: '' });
+  useSettingsStore.getState().update({ baseUrl: 'https://x', clientId: '', permanentToken: '', recentIssues: [] });
   useRoadmapStore.setState({ status: 'idle', roadmap: null, error: null, progress: 0, issueId: '' });
 });
 
@@ -50,10 +50,35 @@ describe('roadmapStore', () => {
     expect(useRoadmapStore.getState().error?.name).toBe('IssueNotFoundError');
   });
 
-  it('remembers the normalised issue id in settings', async () => {
+  it('remembers the normalised issue id even when the build fails', async () => {
+    useSettingsStore.getState().update({ permanentToken: 'perm' });
+    await useRoadmapStore.getState().build(' nope-1 ');
+    expect(useRoadmapStore.getState().status).toBe('error');
+    expect(useSettingsStore.getState().settings.recentIssues).toEqual([
+      { id: 'NOPE-1', summary: '' },
+    ]);
+  });
+
+  it('learns the epic summary once the build succeeds', async () => {
     useSettingsStore.getState().update({ permanentToken: 'perm' });
     await useRoadmapStore.getState().build(' ep-1 ');
-    expect(useSettingsStore.getState().settings.lastIssueId).toBe('EP-1');
-    expect(JSON.parse(localStorage.getItem('yer.settings')!).lastIssueId).toBe('EP-1');
+    const remembered = [{ id: 'EP-1', summary: 'Epic' }];
+    expect(useSettingsStore.getState().settings.recentIssues).toEqual(remembered);
+    expect(JSON.parse(localStorage.getItem('yer.settings')!).recentIssues).toEqual(remembered);
+  });
+
+  it('moves an issue built again to the head of the history', async () => {
+    useSettingsStore.getState().update({
+      permanentToken: 'perm',
+      recentIssues: [
+        { id: 'OTHER-1', summary: 'Other' },
+        { id: 'EP-1', summary: 'Stale' },
+      ],
+    });
+    await useRoadmapStore.getState().build('EP-1');
+    expect(useSettingsStore.getState().settings.recentIssues).toEqual([
+      { id: 'EP-1', summary: 'Epic' },
+      { id: 'OTHER-1', summary: 'Other' },
+    ]);
   });
 });

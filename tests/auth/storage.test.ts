@@ -30,7 +30,7 @@ describe('settings', () => {
       colorScheme: 'youtrack' as const,
       theme: 'dark' as const,
       criticalPath: true,
-      lastIssueId: 'WMS-42',
+      recentIssues: [{ id: 'WMS-42', summary: 'An epic' }],
       showResolved: false,
     };
     saveSettings(settings);
@@ -48,10 +48,49 @@ describe('settings', () => {
     localStorage.setItem('yer.settings', JSON.stringify({ criticalPath: 'yes' }));
     expect(loadSettings().criticalPath).toBe(false);
   });
-  it('defaults the last issue id to empty and rejects non-strings', () => {
-    expect(DEFAULT_SETTINGS.lastIssueId).toBe('');
-    localStorage.setItem('yer.settings', JSON.stringify({ lastIssueId: 42 }));
-    expect(loadSettings().lastIssueId).toBe('');
+  it('defaults the recent issues to an empty list and rejects a non-list', () => {
+    expect(DEFAULT_SETTINGS.recentIssues).toEqual([]);
+    localStorage.setItem('yer.settings', JSON.stringify({ recentIssues: 'WMS-42' }));
+    expect(loadSettings().recentIssues).toEqual([]);
+  });
+  it('drops recent issues that are not an id with a summary', () => {
+    localStorage.setItem(
+      'yer.settings',
+      JSON.stringify({
+        recentIssues: [
+          { id: 'WMS-1', summary: 'Kept' },
+          { id: 'WMS-2' },
+          { id: 42, summary: 'Numeric id' },
+          'WMS-3',
+          null,
+        ],
+      }),
+    );
+    expect(loadSettings().recentIssues).toEqual([{ id: 'WMS-1', summary: 'Kept' }]);
+  });
+  it('drops duplicate recent issues and trims the list to ten', () => {
+    const stored = [
+      { id: 'WMS-1', summary: 'First' },
+      { id: 'WMS-1', summary: 'Same id again' },
+      ...Array.from({ length: 12 }, (_, i) => ({ id: `WMS-${i + 2}`, summary: `Issue ${i + 2}` })),
+    ];
+    localStorage.setItem('yer.settings', JSON.stringify({ recentIssues: stored }));
+    const loaded = loadSettings().recentIssues;
+    expect(loaded).toHaveLength(10);
+    expect(loaded.map((i) => i.id)).toEqual([
+      'WMS-1', 'WMS-2', 'WMS-3', 'WMS-4', 'WMS-5', 'WMS-6', 'WMS-7', 'WMS-8', 'WMS-9', 'WMS-10',
+    ]);
+  });
+  it('migrates the issue id remembered by an earlier release into the history', () => {
+    localStorage.setItem('yer.settings', JSON.stringify({ lastIssueId: 'WMS-42' }));
+    expect(loadSettings().recentIssues).toEqual([{ id: 'WMS-42', summary: '' }]);
+  });
+  it('ignores the migrated id once a history exists', () => {
+    localStorage.setItem(
+      'yer.settings',
+      JSON.stringify({ lastIssueId: 'WMS-42', recentIssues: [{ id: 'WMS-1', summary: 'First' }] }),
+    );
+    expect(loadSettings().recentIssues).toEqual([{ id: 'WMS-1', summary: 'First' }]);
   });
   it('defaults show resolved to on and rejects non-booleans', () => {
     expect(DEFAULT_SETTINGS.showResolved).toBe(true);

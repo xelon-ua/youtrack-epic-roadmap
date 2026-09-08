@@ -41,7 +41,9 @@ describe('App', () => {
 
   it('offers the remembered issue id without building it', () => {
     window.history.replaceState(null, '', '/youtrack-epic-roadmap/');
-    useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, lastIssueId: 'WMS-42' } });
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SETTINGS, recentIssues: [{ id: 'WMS-42', summary: 'Rollout' }] },
+    });
     render(<App />);
     expect(screen.getByLabelText('Issue ID')).toHaveValue('WMS-42');
     expect(useRoadmapStore.getState().issueId).toBe('');

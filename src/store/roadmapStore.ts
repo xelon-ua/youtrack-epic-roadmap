@@ -4,6 +4,7 @@ import type { Roadmap } from '../graph/model';
 import { createYouTrackClient } from '../api/youtrack';
 import { getAccessToken } from './authStore';
 import { useSettingsStore } from './settingsStore';
+import { rememberIssue } from './recentIssues';
 
 export class NotAuthenticatedError extends Error {
   constructor() {
@@ -27,6 +28,12 @@ interface RoadmapState {
 
 let controller: AbortController | null = null;
 
+/** The summary is only known once the build succeeds; until then the id is remembered alone. */
+function remember(id: string, summary: string): void {
+  const { settings, update } = useSettingsStore.getState();
+  update({ recentIssues: rememberIssue(settings.recentIssues, { id, summary }) });
+}
+
 export const useRoadmapStore = create<RoadmapState>()((set) => ({
   issueId: '',
   status: 'idle',
@@ -43,7 +50,7 @@ export const useRoadmapStore = create<RoadmapState>()((set) => ({
     const { signal } = controller;
     set({ issueId, status: 'loading', error: null, progress: 0, roadmap: null });
     // Remembered as soon as it is asked for: the input should come back even if the build fails.
-    useSettingsStore.getState().update({ lastIssueId: issueId });
+    remember(issueId, '');
 
     const token = getAccessToken();
     if (!token) {
@@ -58,7 +65,9 @@ export const useRoadmapStore = create<RoadmapState>()((set) => ({
         signal,
         onProgress: (n) => set({ progress: n }),
       });
-      if (!signal.aborted) set({ status: 'ready', roadmap });
+      if (signal.aborted) return;
+      set({ status: 'ready', roadmap });
+      remember(issueId, roadmap.nodes.get(roadmap.rootId)?.summary ?? '');
     } catch (err) {
       if (signal.aborted) return;
       set({ status: 'error', error: err instanceof Error ? err : new Error(String(err)) });
