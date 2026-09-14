@@ -122,6 +122,12 @@ Autobuilding otherwise stays the job of the `?issue=` parameter (or an OAuth cal
 the id), which also decides what the URL says — a remembered id never rewrites it. Precedence
 at boot is OAuth callback → `?issue=` → remembered id.
 
+An issue card's context menu (`IssueNode.tsx`) can move to another graph. Building here pushes a
+history entry (`pushIssueToUrl`, `src/ui/issueUrl.ts`) before building, and `App` rebuilds on
+`popstate`, so Back and Forward walk the graphs visited this way; builds from the input keep
+replacing the URL. Building in a new window opens `?issue=` without `noopener`, because only
+an opener's tab hands its sessionStorage — and with it the OAuth token — to the new one.
+
 Loading is defensive: the store is hand-editable and outlives releases, so `loadSettings`
 replaces any value of the wrong type with its default.
 

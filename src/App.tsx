@@ -10,17 +10,7 @@ import { useSettingsStore } from './store/settingsStore';
 import { useAuthStore, getAccessToken } from './store/authStore';
 import { handleOAuthCallback, loadCurrentUser, scheduleRefresh } from './auth/session';
 import { ThemeProvider } from './ui/ThemeProvider';
-
-function issueFromUrl(): string | null {
-  return new URLSearchParams(window.location.search).get('issue');
-}
-
-function writeIssueToUrl(issueId: string): void {
-  const url = new URL(window.location.href);
-  if (issueId) url.searchParams.set('issue', issueId);
-  else url.searchParams.delete('issue');
-  window.history.replaceState(null, '', url);
-}
+import { issueFromUrl, writeIssueToUrl } from './ui/issueUrl';
 
 function Shell() {
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -43,6 +33,18 @@ function Shell() {
   }, [build, setIssueId]);
 
   useEffect(() => writeIssueToUrl(issueId), [issueId]);
+
+  // Graphs built from a card's menu are history entries: Back and Forward rebuild the one returned to.
+  useEffect(() => {
+    const onPopState = () => {
+      const id = issueFromUrl();
+      if (!id) return;
+      setIssueId(id);
+      if (getAccessToken()) void build(id);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [build, setIssueId]);
 
   // Whenever the token changes: (re)load the user and arm the silent refresh.
   useEffect(() => {

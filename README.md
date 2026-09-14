@@ -16,7 +16,9 @@ finished epic. The theme button in the toolbar switches between following the sy
 light and dark. The ten issues you built most recently and the state of the "Show resolved"
 switch are remembered for the next visit: the latest id comes back in the input, ready for you
 to press Build, and clicking into the input drops down the rest of the history — id and title —
-to build with one click.
+to build with one click. Clicking an issue opens it in YouTrack; right-clicking it offers to open
+it, to build the graph for that issue instead (Back returns to the previous graph) or to build it
+in a new window.
 
 ![An epic laid out as a dependency graph, with resolved issues hidden](docs/images/roadmap-example.png)
 
