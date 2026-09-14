@@ -57,4 +57,13 @@ describe('App', () => {
     expect(useRoadmapStore.getState().issueId).toBe('WMS-42');
     expect(screen.getByLabelText('Issue ID')).toHaveValue('WMS-42');
   });
+
+  it('rebuilds the issue the browser goes back to', () => {
+    window.history.replaceState(null, '', '/youtrack-epic-roadmap/?issue=WMS-42');
+    render(<App />);
+    window.history.pushState(null, '', '/youtrack-epic-roadmap/?issue=WMS-7');
+    act(() => window.dispatchEvent(new PopStateEvent('popstate')));
+    expect(useRoadmapStore.getState().issueId).toBe('WMS-7');
+    expect(screen.getByLabelText('Issue ID')).toHaveValue('WMS-7');
+  });
 });
