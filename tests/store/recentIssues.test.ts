@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MAX_RECENT_ISSUES, rememberIssue } from '../../src/store/recentIssues';
+import { MAX_RECENT_ISSUES, forgetIssue, rememberIssue } from '../../src/store/recentIssues';
 
 describe('rememberIssue', () => {
   it('puts the issue at the head of an empty list', () => {
@@ -47,5 +47,29 @@ describe('rememberIssue', () => {
     const list = [{ id: 'WMS-1', summary: 'First' }];
     rememberIssue(list, { id: 'WMS-2', summary: 'Second' });
     expect(list).toEqual([{ id: 'WMS-1', summary: 'First' }]);
+  });
+});
+
+describe('forgetIssue', () => {
+  const list = [
+    { id: 'WMS-1', summary: 'First' },
+    { id: 'WMS-2', summary: 'Second' },
+    { id: 'WMS-3', summary: 'Third' },
+  ];
+
+  it('drops the issue and keeps the rest in order', () => {
+    expect(forgetIssue(list, 'WMS-2')).toEqual([
+      { id: 'WMS-1', summary: 'First' },
+      { id: 'WMS-3', summary: 'Third' },
+    ]);
+  });
+
+  it('leaves the list as it is when the issue is not in it', () => {
+    expect(forgetIssue(list, 'WMS-9')).toEqual(list);
+  });
+
+  it('leaves the list it was given untouched', () => {
+    forgetIssue(list, 'WMS-1');
+    expect(list).toHaveLength(3);
   });
 });

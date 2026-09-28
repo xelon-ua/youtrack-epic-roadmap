@@ -18,7 +18,8 @@ switches between following the system, light and dark; the Legend button top-rig
 the card borders, colours and arrows. The ten issues you built most recently and the state of the "Show resolved"
 switch are remembered for the next visit: the latest id comes back in the input, ready for you
 to press Build, and clicking into the input drops down the rest of the history — id and title —
-to build with one click. Clicking an issue opens it in YouTrack; right-clicking it offers to open
+to build with one click; the × on an entry (or Delete while it is highlighted) removes an
+issue you no longer need from the history. Clicking an issue opens it in YouTrack; right-clicking it offers to open
 it, to build the graph for that issue instead (Back returns to the previous graph) or to build it
 in a new window.
 

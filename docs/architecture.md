@@ -134,7 +134,8 @@ history remembered a single `lastIssueId`; `loadSettings` migrates it into a one
 
 The history is only ever *offered*: `IssueIdInput` seeds its field with `recentIssues[0]` when
 the store has no issue yet, and nothing is fetched until you press Build. Focusing the field
-opens the history; typing narrows it by id or summary; picking an entry builds it immediately.
+opens the history; typing narrows it by id or summary; picking an entry builds it immediately. Its × button, or Delete while it is highlighted,
+removes the entry instead (`forgetIssue`); the field keeps the focus and the list stays open.
 Autobuilding otherwise stays the job of the `?issue=` parameter (or an OAuth callback carrying
 the id), which also decides what the URL says — a remembered id never rewrites it. Precedence
 at boot is OAuth callback → `?issue=` → remembered id.
