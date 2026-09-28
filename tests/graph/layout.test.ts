@@ -76,4 +76,16 @@ describe('layoutRoadmap', () => {
     expect(r.orphanLane!.y).toBe(0);
     expect(r.positions.size).toBe(2);
   });
+
+  it('gives identical positions when issue responses arrive in a different order', async () => {
+    const { fetchIssue } = createFixtureFetch();
+    const delayed = (delayOf: (id: string) => number) => (id: string): ReturnType<typeof fetchIssue> =>
+      new Promise((resolve, reject) => setTimeout(() => fetchIssue(id).then(resolve, reject), delayOf(id)));
+    const num = (id: string) => Number(id.split('-')[1]);
+    const positions = async (delayOf: (id: string) => number) => {
+      const r = await collectRoadmap('EP-1', delayed(delayOf), { baseUrl: 'https://x' });
+      return [...layoutRoadmap(projectRoadmap(r, { showResolved: true })).positions].sort();
+    };
+    expect(await positions(num)).toEqual(await positions((id) => 40 - num(id)));
+  });
 });

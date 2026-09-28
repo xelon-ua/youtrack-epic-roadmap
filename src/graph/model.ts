@@ -50,6 +50,11 @@ export interface Roadmap {
   truncated: boolean;
 }
 
+/** Natural issue-id order: project first, then the number numerically (EP-2 before EP-10). */
+export function compareIssueIds(a: string, b: string): number {
+  return a.localeCompare(b, 'en', { numeric: true });
+}
+
 export function linkedIds(
   dto: IssueDto,
   type: 'Subtask' | 'Depend',
