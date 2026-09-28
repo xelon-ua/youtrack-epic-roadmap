@@ -20,12 +20,13 @@ import { useCriticalPathStore } from '../store/criticalPathStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { IssueNode, type IssueFlowNode } from './IssueNode';
 import { useTheme, type Theme } from './theme';
+import { nodeColors } from './nodeStyle';
 
 type LaneNode = Node<{ label: string }, 'lane'>;
 
 function LaneLabel({ data }: NodeProps<LaneNode>) {
   return (
-    <div className="select-none text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+    <div className="select-none text-sm font-semibold uppercase tracking-wide text-muted">
       {data.label}
     </div>
   );
@@ -38,13 +39,17 @@ interface EdgeColors {
   active: string;
   /* Hierarchy edges are inferred, not links the user drew, so they stay quieter. */
   subtask: string;
-  /* Matches the amber outline the cards on the path wear. */
+  /* Matches the rose outline the cards on the path wear. */
   critical: string;
 }
 
+/*
+ * `active` and `critical` are the `--app-hover` and `--app-critical` tokens of index.css: violet
+ * and rose, because blue and amber already name the "In progress" and "In review" statuses.
+ */
 const EDGE_COLORS: Record<Theme, EdgeColors> = {
-  light: { idle: '#9ca3af', active: '#2563eb', subtask: '#d1d5db', critical: '#d97706' },
-  dark: { idle: '#64748b', active: '#60a5fa', subtask: '#3f4a5f', critical: '#fbbf24' },
+  light: { idle: '#94a3b8', active: '#8b5cf6', subtask: '#cbd5e1', critical: '#e11d48' },
+  dark: { idle: '#64748b', active: '#a78bfa', subtask: '#3f4a5f', critical: '#fb7185' },
 };
 
 const NO_IDS: ReadonlySet<string> = new Set();
@@ -58,6 +63,8 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
   const setHovered = useHoverStore((s) => s.setHovered);
   const setCriticalPath = useCriticalPathStore((s) => s.setCriticalPath);
   const showCriticalPath = useSettingsStore((s) => s.settings.criticalPath);
+  const epicLinks = useSettingsStore((s) => s.settings.epicLinks);
+  const scheme = useSettingsStore((s) => s.settings.colorScheme);
   const { fitView } = useReactFlow();
 
   const projection = useMemo(() => projectRoadmap(roadmap, { showResolved }), [roadmap, showResolved]);
@@ -114,6 +121,11 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
         const active = hoveredId !== null && (e.from === hoveredId || e.to === hoveredId);
         const hierarchy = e.kind === 'subtask';
         const critical = criticalEdges.has(edgeKey(e.from, e.to));
+        /*
+         * Every child of the root epic points at it, which says nothing the layout does not; hiding
+         * those edges (not removing them) keeps the layout still. A step of the critical path stays.
+         */
+        const hidden = !epicLinks && hierarchy && e.to === projection.rootId && !critical;
         const palette = EDGE_COLORS[theme];
         const color = active
           ? palette.active
@@ -133,9 +145,10 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
             ...(hierarchy ? { strokeDasharray: EDGE_SUBTASK_DASH } : {}),
           },
           animated: active && !hierarchy,
+          hidden,
         };
       }),
-    [projection, hoveredId, theme, criticalEdges],
+    [projection, hoveredId, theme, criticalEdges, epicLinks],
   );
 
   const enterNode = (id: string): void => {
@@ -173,8 +186,15 @@ export function RoadmapCanvas({ roadmap, showResolved }: { roadmap: Roadmap; sho
       fitView
     >
       <Background />
-      <Controls showInteractive={false} />
-      <MiniMap pannable zoomable />
+      <Controls showInteractive={false} position="bottom-left" />
+      <MiniMap
+        pannable
+        zoomable
+        position="bottom-right"
+        // The overview keeps the status colours, so a stalled region shows up before zooming in.
+        nodeColor={(n) => (n.type === 'issue' ? nodeColors((n as IssueFlowNode).data.node, scheme, theme).accent : 'transparent')}
+        nodeBorderRadius={4}
+      />
     </ReactFlow>
   );
 }

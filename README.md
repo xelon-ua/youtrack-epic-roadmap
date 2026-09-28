@@ -12,8 +12,10 @@ Give it an epic id (e.g. `ACME-102`). It collects every subtask recursively, fol
 the epic (one level), and lays the result out in layers: leftmost issues have no
 unresolved prerequisites. Hide resolved issues to see what can be started now. The
 critical path switch outlines the longest chain of issues standing between you and a
-finished epic. The theme button in the toolbar switches between following the system,
-light and dark. The ten issues you built most recently and the state of the "Show resolved"
+finished epic, and the Epic links switch hides the dashed edges from each subtask into the
+epic, which only restate that the epic needs all of them. The theme button in the toolbar
+switches between following the system, light and dark; the Legend button top-right explains
+the card borders, colours and arrows. The ten issues you built most recently and the state of the "Show resolved"
 switch are remembered for the next visit: the latest id comes back in the input, ready for you
 to press Build, and clicking into the input drops down the rest of the history — id and title —
 to build with one click. Clicking an issue opens it in YouTrack; right-clicking it offers to open

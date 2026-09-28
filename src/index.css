@@ -4,6 +4,65 @@
 /* The theme is a stored choice, not only an OS setting, so `dark:` follows our class. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Chrome colours, one set per theme. Components use the Tailwind names below (`bg-raised`,
+ * `text-muted`, `ring-focus`…) rather than pairing a light and a dark class each time. The
+ * graph's own palettes live in src/ui (they are mixed and fed to SVG as literal hex); their
+ * hover and critical hues match `--app-hover` and `--app-critical`.
+ */
+:root {
+  --app-surface: #ffffff;
+  --app-raised: #ffffff;
+  --app-sunken: #f8fafc;
+  --app-fg: #0f172a;
+  --app-muted: #475569;
+  --app-line: #e2e8f0;
+  --app-line-strong: #cbd5e1;
+  --app-primary: #2563eb;
+  --app-primary-hover: #1d4ed8;
+  --app-primary-fg: #ffffff;
+  --app-focus: #2563eb;
+  --app-hover: #8b5cf6;
+  --app-critical: #e11d48;
+}
+
+.dark {
+  --app-surface: #0f172a;
+  --app-raised: #1e293b;
+  --app-sunken: #0b1222;
+  --app-fg: #e2e8f0;
+  --app-muted: #94a3b8;
+  --app-line: #334155;
+  --app-line-strong: #475569;
+  --app-primary: #3b82f6;
+  --app-primary-hover: #60a5fa;
+  --app-primary-fg: #ffffff;
+  --app-focus: #60a5fa;
+  --app-hover: #a78bfa;
+  --app-critical: #fb7185;
+}
+
+@theme inline {
+  --color-surface: var(--app-surface);
+  --color-raised: var(--app-raised);
+  --color-sunken: var(--app-sunken);
+  --color-fg: var(--app-fg);
+  --color-muted: var(--app-muted);
+  --color-line: var(--app-line);
+  --color-line-strong: var(--app-line-strong);
+  --color-primary: var(--app-primary);
+  --color-primary-hover: var(--app-primary-hover);
+  --color-primary-fg: var(--app-primary-fg);
+  --color-focus: var(--app-focus);
+  --color-hover: var(--app-hover);
+  --color-critical: var(--app-critical);
+}
+
+@theme {
+  /* No font download: JetBrains Mono is used where it is installed, as it often is for YouTrack users. */
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+}
+
 html,
 body,
 #root {
@@ -12,11 +71,13 @@ body,
 }
 
 body {
-  background: #ffffff;
-  color: #111827;
+  background: var(--app-surface);
+  color: var(--app-fg);
 }
 
-.dark body {
-  background: #0f172a;
-  color: #e2e8f0;
+/* The dash animation on a hovered edge is decoration; it goes for people who asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .react-flow__edge.animated path {
+    animation: none;
+  }
 }

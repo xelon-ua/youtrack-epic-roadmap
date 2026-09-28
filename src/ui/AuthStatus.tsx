@@ -2,6 +2,7 @@ import { useAuthStore, authMode } from '../store/authStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useRoadmapStore } from '../store/roadmapStore';
 import { startLogin } from '../auth/session';
+import { LINK_BUTTON, SECONDARY_BUTTON } from './controls';
 
 export function AuthStatus() {
   const user = useAuthStore((s) => s.user);
@@ -13,13 +14,17 @@ export function AuthStatus() {
   const mode = authMode();
 
   if (mode === 'permanent-token') {
-    return <span className="text-gray-600 dark:text-slate-400">token · {user?.login ?? '…'}</span>;
+    return (
+      <span className="whitespace-nowrap text-muted" title="Signed in with a permanent token">
+        token · {user?.login ?? '…'}
+      </span>
+    );
   }
   if (mode === 'oauth') {
     return (
-      <span className="flex items-center gap-2 text-gray-600 dark:text-slate-400">
+      <span className="flex items-center gap-2 whitespace-nowrap text-muted">
         {user?.fullName ?? user?.login ?? 'signed in'}
-        <button type="button" onClick={signOut} className="underline">
+        <button type="button" onClick={signOut} className={LINK_BUTTON}>
           Sign out
         </button>
       </span>
@@ -32,7 +37,7 @@ export function AuthStatus() {
       disabled={!canLogin}
       title={canLogin ? undefined : 'Set YouTrack URL and OAuth client ID in Settings'}
       onClick={() => startLogin(issueId || null)}
-      className="rounded bg-gray-900 px-3 py-1 text-white disabled:opacity-40 dark:bg-slate-700"
+      className={SECONDARY_BUTTON}
     >
       Sign in with YouTrack
     </button>

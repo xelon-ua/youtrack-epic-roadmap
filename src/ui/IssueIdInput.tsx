@@ -2,6 +2,8 @@ import { useState, type FormEvent, type KeyboardEvent } from 'react';
 import { useRoadmapStore } from '../store/roadmapStore';
 import { useSettingsStore } from '../store/settingsStore';
 import type { RecentIssue } from '../auth/storage';
+import { PRIMARY_BUTTON, TEXT_INPUT } from './controls';
+import { SpinnerIcon } from './icons';
 
 const LISTBOX_ID = 'issue-id-history';
 const optionId = (index: number) => `${LISTBOX_ID}-${index}`;
@@ -88,7 +90,7 @@ export function IssueIdInput() {
           onBlur={() => setOpen(false)}
           onKeyDown={onKeyDown}
           placeholder="ACME-102"
-          className="w-36 rounded border px-2 py-1 font-mono dark:border-slate-600 dark:bg-slate-800"
+          className={`${TEXT_INPUT} w-36 font-mono`}
           aria-label="Issue ID"
           role="combobox"
           aria-expanded={listOpen}
@@ -102,7 +104,7 @@ export function IssueIdInput() {
             id={LISTBOX_ID}
             role="listbox"
             aria-label="Recent issues"
-            className="absolute left-0 top-full z-20 mt-1 max-h-80 w-96 max-w-[80vw] overflow-y-auto rounded border border-gray-200 bg-white py-1 shadow-lg dark:border-slate-600 dark:bg-slate-800"
+            className="absolute left-0 top-full z-20 mt-1 max-h-80 w-96 max-w-[80vw] overflow-y-auto rounded-md border border-line bg-raised py-1 shadow-lg"
           >
             {shown.map((issue, index) => (
               <li
@@ -116,22 +118,17 @@ export function IssueIdInput() {
                   pick(issue);
                 }}
                 onMouseEnter={() => setHighlight(index)}
-                className={`flex cursor-pointer items-baseline gap-2 px-2 py-1 ${
-                  index === highlight ? 'bg-blue-50 dark:bg-slate-700' : ''
-                }`}
+                className={`flex cursor-pointer items-baseline gap-2 px-3 py-1.5 ${index === highlight ? 'bg-sunken' : ''}`}
               >
                 <span className="shrink-0 font-mono">{issue.id}</span>
-                <span className="truncate text-gray-500 dark:text-slate-400">{issue.summary}</span>
+                <span className="truncate text-muted">{issue.summary}</span>
               </li>
             ))}
           </ul>
         )}
       </div>
-      <button
-        type="submit"
-        disabled={status === 'loading'}
-        className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-50"
-      >
+      <button type="submit" disabled={status === 'loading'} className={PRIMARY_BUTTON}>
+        {status === 'loading' && <SpinnerIcon size={14} />}
         {status === 'loading' ? 'Building…' : 'Build'}
       </button>
     </form>

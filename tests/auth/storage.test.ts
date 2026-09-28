@@ -32,6 +32,8 @@ describe('settings', () => {
       criticalPath: true,
       recentIssues: [{ id: 'WMS-42', summary: 'An epic' }],
       showResolved: false,
+      epicLinks: false,
+      legendOpen: true,
     };
     saveSettings(settings);
     expect(loadSettings()).toEqual(settings);
@@ -96,6 +98,13 @@ describe('settings', () => {
     expect(DEFAULT_SETTINGS.showResolved).toBe(true);
     localStorage.setItem('yer.settings', JSON.stringify({ showResolved: 'yes' }));
     expect(loadSettings().showResolved).toBe(true);
+  });
+  it('defaults epic links to shown, the legend to folded, and rejects non-booleans', () => {
+    expect(DEFAULT_SETTINGS.epicLinks).toBe(true);
+    expect(DEFAULT_SETTINGS.legendOpen).toBe(false);
+    localStorage.setItem('yer.settings', JSON.stringify({ epicLinks: 'no', legendOpen: 1 }));
+    expect(loadSettings().epicLinks).toBe(true);
+    expect(loadSettings().legendOpen).toBe(false);
   });
   it('defaults the theme to system and rejects unknown values', () => {
     expect(DEFAULT_SETTINGS.theme).toBe('system');
