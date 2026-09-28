@@ -146,4 +146,64 @@ describe('IssueIdInput', () => {
     open();
     expect(input()).toHaveAttribute('aria-expanded', 'true');
   });
+
+  it('removes an issue from the history with its remove button, without building it', () => {
+    withHistory();
+    render(<IssueIdInput />);
+    open();
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Remove PLM-7 from history' }));
+
+    expect(build).not.toHaveBeenCalled();
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      expect.stringContaining('WMS-42'),
+      expect.stringContaining('WMS-9'),
+    ]);
+    expect(useSettingsStore.getState().settings.recentIssues.map((i) => i.id)).toEqual([
+      'WMS-42',
+      'WMS-9',
+    ]);
+  });
+
+  it('removes the highlighted issue on Delete and highlights the one that took its place', () => {
+    withHistory();
+    render(<IssueIdInput />);
+    open();
+    fireEvent.keyDown(input(), { key: 'ArrowDown' });
+    fireEvent.keyDown(input(), { key: 'ArrowDown' });
+    fireEvent.keyDown(input(), { key: 'Delete' });
+
+    expect(screen.queryByRole('option', { name: /PLM-7/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /WMS-9/ })).toHaveAttribute('aria-selected', 'true');
+    expect(build).not.toHaveBeenCalled();
+  });
+
+  it('moves the highlight up when the last issue is removed on Delete', () => {
+    withHistory();
+    render(<IssueIdInput />);
+    open();
+    for (let i = 0; i < 3; i++) fireEvent.keyDown(input(), { key: 'ArrowDown' });
+    fireEvent.keyDown(input(), { key: 'Delete' });
+
+    expect(screen.getByRole('option', { name: /PLM-7/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('leaves Delete to the text when nothing is highlighted', () => {
+    withHistory();
+    render(<IssueIdInput />);
+    open();
+    fireEvent.keyDown(input(), { key: 'Delete' });
+    expect(screen.getAllByRole('option')).toHaveLength(3);
+  });
+
+  it('closes the list once the last remembered issue is removed', () => {
+    useSettingsStore.setState({
+      settings: { ...DEFAULT_SETTINGS, recentIssues: [{ id: 'WMS-42', summary: 'Warehouse rollout' }] },
+    });
+    render(<IssueIdInput />);
+    open();
+    fireEvent.mouseDown(screen.getByRole('button', { name: 'Remove WMS-42 from history' }));
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(useSettingsStore.getState().settings.recentIssues).toEqual([]);
+  });
 });

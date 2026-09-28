@@ -13,3 +13,8 @@ export function rememberIssue(list: RecentIssue[], entry: RecentIssue): RecentIs
   const head = { id: entry.id, summary: entry.summary || (known?.summary ?? '') };
   return [head, ...list.filter((i) => i.id !== entry.id)].slice(0, MAX_RECENT_ISSUES);
 }
+
+/** The history without the issue, for entries the user no longer needs offered. */
+export function forgetIssue(list: RecentIssue[], id: string): RecentIssue[] {
+  return list.filter((i) => i.id !== id);
+}
