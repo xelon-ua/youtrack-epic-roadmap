@@ -12,6 +12,7 @@ import { useIsCritical } from '../store/criticalPathStore';
 import { graphUrl, pushIssueToUrl } from './issueUrl';
 import { borderClass, kindLabel, nodeColors } from './nodeStyle';
 import { useTheme, type Theme } from './theme';
+import { CheckIcon } from './icons';
 
 export interface IssueNodeData extends Record<string, unknown> {
   node: RoadmapNode;
@@ -45,12 +46,15 @@ export function IssueNodeCard({
                 onClick={openIssue}
                 style={{ width: NODE_WIDTH, height: NODE_HEIGHT, background: colors.background, color: colors.color }}
                 className={[
-                  'relative overflow-hidden rounded-md py-2 pl-4 pr-3 text-left shadow-sm flex flex-col justify-between cursor-pointer',
+                  // Rows stack from the top rather than spreading out, so the summary always keeps its two lines.
+                  'relative flex cursor-pointer flex-col overflow-hidden rounded-md py-2 pl-4 pr-3 text-left shadow-sm',
+                  'motion-safe:transition-shadow focus-visible:ring-4 focus-visible:ring-focus',
                   borderClass(node.kind),
                   node.resolved ? 'opacity-70' : '',
-                  highlighted ? 'ring-4 ring-blue-400' : '',
-                  // An outline rather than a ring, so a hovered card can carry both marks at once.
-                  critical ? 'outline-2 outline-offset-2 outline-amber-500' : '',
+                  // Violet, not blue: blue already means "In progress".
+                  highlighted ? 'ring-4 ring-hover/70' : '',
+                  // An outline rather than a ring, so a hovered or focused card can carry both marks at once.
+                  critical ? 'outline-2 outline-offset-2 outline-critical' : 'focus-visible:outline-none',
                 ].join(' ')}
               >
                 {/* Status accent: the fill alone stops separating cards once the map is zoomed out. */}
@@ -60,19 +64,24 @@ export function IssueNodeCard({
                   className="absolute left-0 top-0 h-full w-1.5"
                   style={{ background: colors.accent }}
                 />
-                <div className="flex items-center justify-between text-xs font-mono">
-                  <span className="font-semibold">{node.id}</span>
-                  {label && <span className="rounded bg-black/10 px-1">{label}</span>}
-                </div>
-                <div className="text-sm leading-tight line-clamp-2">{node.summary}</div>
-                <div className="text-[11px] opacity-80">{node.state?.name ?? 'no state'}</div>
+                <span className="flex shrink-0 items-center justify-between gap-2 font-mono text-xs">
+                  <span className="truncate font-semibold">{node.id}</span>
+                  {label && <span className="shrink-0 rounded bg-black/10 px-1 dark:bg-white/10">{label}</span>}
+                </span>
+                <span className="line-clamp-2 shrink-0 text-[13px] leading-[1.3]">{node.summary}</span>
+                <span className="mt-auto flex shrink-0 items-center gap-1 truncate text-xs opacity-80">
+                  {/* Done is not told by the green fill alone. */}
+                  {node.resolved && <CheckIcon size={12} className="shrink-0" />}
+                  {node.state?.name ?? 'no state'}
+                </span>
               </button>
             </Tooltip.Trigger>
           </ContextMenu.Trigger>
           <Tooltip.Portal>
             <Tooltip.Content
               side="top"
-              className="z-50 max-w-sm rounded bg-gray-900 px-3 py-2 text-xs text-white shadow-lg dark:bg-slate-700"
+              sideOffset={6}
+              className="z-50 max-w-sm space-y-0.5 rounded-md bg-slate-900 px-3 py-2 text-xs text-white shadow-lg dark:bg-slate-700"
             >
               <div className="font-semibold">
                 {node.id}: {node.summary}
@@ -81,12 +90,13 @@ export function IssueNodeCard({
               <div>Assignee: {node.assignee ?? 'unassigned'}</div>
               <div>Project: {node.project}</div>
               {node.parentId && <div>Parent: {node.parentId}</div>}
+              <div className="pt-1 text-slate-300">Right-click or Shift+F10 for more actions</div>
             </Tooltip.Content>
           </Tooltip.Portal>
         </Tooltip.Root>
       </Tooltip.Provider>
       <ContextMenu.Portal>
-        <ContextMenu.Content className="z-50 min-w-48 rounded border border-gray-200 bg-white py-1 text-sm text-gray-900 shadow-lg dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100">
+        <ContextMenu.Content className="z-50 min-w-48 rounded-md border border-line bg-raised py-1 text-sm text-fg shadow-lg">
           <ContextMenu.Item className={MENU_ITEM_CLASS} onSelect={openIssue}>
             Open in YouTrack
           </ContextMenu.Item>
@@ -109,7 +119,7 @@ export function IssueNodeCard({
 }
 
 const MENU_ITEM_CLASS =
-  'cursor-pointer select-none px-3 py-1.5 outline-none data-[highlighted]:bg-blue-600 data-[highlighted]:text-white data-[disabled]:cursor-default data-[disabled]:opacity-50';
+  'cursor-pointer select-none px-3 py-1.5 outline-none data-[highlighted]:bg-primary data-[highlighted]:text-primary-fg data-[disabled]:cursor-default data-[disabled]:opacity-50';
 
 /** Swaps the map for `issueId`'s graph, leaving the current one a Back away. */
 function buildGraphHere(issueId: string): void {

@@ -2,7 +2,7 @@ import * as dagre from '@dagrejs/dagre';
 import type { RoadmapProjection } from './filter';
 
 export const NODE_WIDTH = 240;
-export const NODE_HEIGHT = 72;
+export const NODE_HEIGHT = 92;
 const RANK_SEP = 80;
 const NODE_SEP = 30;
 const LANE_GAP = 60; // space between main graph bottom and the lane label

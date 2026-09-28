@@ -13,7 +13,7 @@ Single-page app, no backend. Everything below runs in the browser.
 | `src/graph/layout.ts` | `dagre` left-to-right layout; orphans (issues without a single edge — in practice only a root that has neither subtasks nor Depend links) go to a separate lane below. |
 | `src/auth/` | Hub OAuth 2.0 implicit flow: auth URL, `state` (nonce + issue id), fragment parsing, silent refresh via hidden iframe + `postMessage`, storage, login session. |
 | `src/store/` | Zustand stores: settings (localStorage), auth token (sessionStorage), roadmap build state. Every switch in the toolbar lives in settings, so it survives a reload. |
-| `src/ui/` | React Flow canvas, issue cards coloured by status, toolbar, settings, status banner. |
+| `src/ui/` | React Flow canvas, issue cards coloured by status, toolbar, legend, settings, the canvas message (setup steps, build progress, errors) and the warnings overlay. |
 
 `graph/*` is pure: it takes a `fetchIssue(id)` function and has no React or network
 dependency, so the whole algorithm is unit-tested against fixtures.
@@ -86,10 +86,19 @@ get no depth and no chain is routed through them; `findCycles` reports them sepa
 
 Nothing is suppressed when the path turns out to cover the whole graph — the switch is the
 control, and the toolbar states how many issues are on the path so that case is visible. Cards
-on the path wear an amber outline (an outline, not a ring, so a hovered card keeps both marks)
-and the steps between them are drawn in the same amber. The set lives in
+on the path wear a rose outline (an outline, not a ring, so a hovered card keeps both marks)
+and the steps between them are drawn in the same rose — not amber, which already means "In
+review"; for the same reason hovering highlights in violet rather than the blue of "In progress". The set lives in
 `src/store/criticalPathStore.ts` rather than in `node.data`, for the same reason as the hover
 state: a changed node object makes React Flow re-measure the graph.
+
+## Epic links
+
+Every child of the root epic has a subtask edge into it, which on a wide epic turns the right
+edge of the map into a fan of dashed lines that say nothing the layout does not. The **Epic
+links** switch (`Settings.epicLinks`, on by default) hides those edges — only the subtask edges
+whose target is the root, and never a step of the critical path. They are hidden, not removed,
+so dagre lays the graph out the same either way.
 
 ## Theme
 
@@ -101,10 +110,18 @@ issue cards must not each own a media-query listener. Tailwind's `dark:` variant
 to that class in `src/index.css`, and a small inline script in `index.html` applies the
 stored theme before the first paint so the app never flashes white.
 
+Chrome colours are tokens: CSS custom properties on `:root` and `.dark` in `src/index.css`,
+exposed to Tailwind as `surface`, `raised`, `sunken`, `fg`, `muted`, `line`, `primary`,
+`focus`, `hover` and `critical` (`bg-raised`, `text-muted`, `outline-focus`…). The graph's
+palettes stay in TypeScript, since they are mixed (`mixWith`) and handed to SVG markers as
+literal hex; `EDGE_COLORS` repeats the `hover` and `critical` hues. Icons are inline SVG in
+`src/ui/icons.tsx`, and shared control looks (32 px high, one focus ring) in `src/ui/controls.ts`.
+
 ## Remembered state
 
 `Settings` (localStorage, key `yer.settings`) keeps the toolbar as you left it: the colour
-scheme, the theme, the critical path and **Show resolved** switches, and `recentIssues` — the
+scheme, the theme, the critical path, **Show resolved** and **Epic links** switches, whether the
+legend is unfolded (`legendOpen`, folded by default so it covers no card), and `recentIssues` — the
 ten issues built most recently, newest first. Because these are per browser rather than per
 issue, opening a different epic inherits the switches from the previous one.
 

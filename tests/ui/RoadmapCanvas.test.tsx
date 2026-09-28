@@ -143,6 +143,26 @@ describe('RoadmapCanvas', () => {
     expect(stroke('EP-3>EP-2')).toBe(idle); // joins two critical nodes but skips a rank
   });
 
+  it('hides the subtask edges into the root epic without Epic links, except steps of the critical path', () => {
+    const intoRoot = roadmap.edges.filter((e) => e.kind === 'subtask' && e.to === roadmap.rootId);
+    expect(intoRoot.length).toBeGreaterThan(1);
+    const hidden = (): string[] =>
+      captured.edges
+        .filter((e) => e.hidden)
+        .map((e) => e.id)
+        .sort();
+    render(<RoadmapCanvas roadmap={roadmap} showResolved />);
+    expect(hidden()).toEqual([]);
+
+    act(() => useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, epicLinks: false } }));
+    expect(hidden()).toEqual(intoRoot.map((e) => `${e.from}>${e.to}`).sort());
+    // Depend edges and deeper hierarchy edges stay.
+    expect(captured.edges.find((e) => e.id === 'EP-4>EP-2')!.hidden).toBe(false);
+
+    act(() => useSettingsStore.setState({ settings: { ...DEFAULT_SETTINGS, epicLinks: false, criticalPath: true } }));
+    expect(captured.edges.find((e) => e.id === 'EP-5>EP-1')!.hidden).toBe(false);
+  });
+
   it('keeps node object identity when the critical path switch flips', () => {
     render(<RoadmapCanvas roadmap={roadmap} showResolved />);
     const before = byId(captured.nodes);

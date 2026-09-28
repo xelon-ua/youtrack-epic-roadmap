@@ -28,6 +28,10 @@ export interface Settings {
   recentIssues: RecentIssue[];
   /** Keep resolved issues on the map. */
   showResolved: boolean;
+  /** Draw the subtask edges that end at the root epic; they only restate that it needs all of them. */
+  epicLinks: boolean;
+  /** The legend panel is expanded rather than folded into its button; folded by default, so it hides no card. */
+  legendOpen: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -39,6 +43,8 @@ export const DEFAULT_SETTINGS: Settings = {
   criticalPath: false,
   recentIssues: [],
   showResolved: true,
+  epicLinks: true,
+  legendOpen: false,
 };
 
 export interface StoredToken {
@@ -96,6 +102,8 @@ export function loadSettings(): Settings {
     settings.recentIssues = [{ id: legacyId, summary: '' }];
   }
   if (typeof settings.showResolved !== 'boolean') settings.showResolved = DEFAULT_SETTINGS.showResolved;
+  if (typeof settings.epicLinks !== 'boolean') settings.epicLinks = DEFAULT_SETTINGS.epicLinks;
+  if (typeof settings.legendOpen !== 'boolean') settings.legendOpen = DEFAULT_SETTINGS.legendOpen;
   return settings;
 }
 

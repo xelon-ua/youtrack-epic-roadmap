@@ -61,11 +61,11 @@ describe('IssueNodeCard', () => {
     const { rerender } = render(
       <IssueNodeCard node={node} highlighted={false} critical={false} scheme="semantic" theme="light" />,
     );
-    expect(screen.getByRole('button')).not.toHaveClass('outline-amber-500');
+    expect(screen.getByRole('button')).not.toHaveClass('outline-critical');
 
     rerender(<IssueNodeCard node={node} highlighted critical scheme="semantic" theme="light" />);
-    expect(screen.getByRole('button')).toHaveClass('outline-amber-500');
-    expect(screen.getByRole('button')).toHaveClass('ring-blue-400');
+    expect(screen.getByRole('button')).toHaveClass('outline-critical');
+    expect(screen.getByRole('button')).toHaveClass('ring-hover/70');
   });
 
   it('uses the YouTrack state colour in the youtrack scheme', () => {
