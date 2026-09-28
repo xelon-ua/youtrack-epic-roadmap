@@ -1,6 +1,7 @@
 import type { IssueDto } from '../api/types';
 import { IssueNotFoundError } from '../api/errors';
 import {
+  compareIssueIds,
   KIND_PRIORITY,
   linkedIds,
   toRoadmapNode,
@@ -249,11 +250,19 @@ export async function collectRoadmap(
   const dependents = collector.linked(treeIds, 'Depend', 'OUTWARD').filter((id) => !collector.has(id));
   await collector.fetchMany(dependents, 'external-dependent');
 
-  // Assemble.
+  /*
+   * Assemble. Issues arrive in network order, and dagre breaks ties by insertion order,
+   * so everything is put in a fixed order (root first, then natural id order) to keep the
+   * layout identical across rebuilds.
+   */
+  const byId = (a: string, b: string): number =>
+    a === rootId ? -1 : b === rootId ? 1 : compareIssueIds(a, b);
   const nodes = new Map<string, RoadmapNode>();
-  for (const id of collector.ids()) nodes.set(id, collector.toNode(id));
+  for (const id of collector.ids().sort(byId)) nodes.set(id, collector.toNode(id));
   const nodeIds = new Set(nodes.keys());
-  const edges = buildEdges(collector, nodeIds);
+  const edges = buildEdges(collector, nodeIds).sort(
+    (a, b) => byId(a.from, b.from) || byId(a.to, b.to),
+  );
 
   const degree = new Map<string, number>();
   for (const e of edges) {
@@ -262,8 +271,7 @@ export async function collectRoadmap(
   }
   const orphanIds = [...nodes.values()]
     .filter((n) => (n.kind === 'root' || n.kind === 'epic') && (degree.get(n.id) ?? 0) === 0)
-    .map((n) => n.id)
-    .sort((a, b) => (a === rootId ? -1 : b === rootId ? 1 : 0));
+    .map((n) => n.id);
 
   return {
     rootId,

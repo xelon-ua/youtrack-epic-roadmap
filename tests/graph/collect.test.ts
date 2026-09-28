@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { collectRoadmap } from '../../src/graph/collect';
 import { IssueNotFoundError } from '../../src/api/errors';
+import { compareIssueIds } from '../../src/graph/model';
 import { createFixtureFetch, makeIssue, link } from '../fixtures/epic';
 
 const BASE = 'https://x.youtrack.cloud';
@@ -146,5 +147,47 @@ describe('collectRoadmap', () => {
     expect(roadmap.nodes.get('X-1')!.kind).toBe('external-prerequisite');
     expect(roadmap.nodes.get('R-3')!.kind).toBe('epic');
     expect(edgeKeys(roadmap.edges)).toEqual(['R-2>R-3', 'R-3>X-1', 'X-1>R-2', 'R-2>R-1', 'R-3>R-1'].sort());
+  });
+});
+
+/** Fixture fetch whose responses arrive in the order set by `delayOf`, not in request order. */
+function delayedFixtureFetch(delayOf: (id: string) => number) {
+  const { fetchIssue } = createFixtureFetch();
+  return (id: string): ReturnType<typeof fetchIssue> =>
+    new Promise((resolve, reject) => setTimeout(() => fetchIssue(id).then(resolve, reject), delayOf(id)));
+}
+
+const issueNumber = (id: string) => Number(id.split('-')[1]);
+
+describe('collectRoadmap ordering', () => {
+  const buildWith = (delayOf: (id: string) => number) =>
+    collectRoadmap('EP-1', delayedFixtureFetch(delayOf), { baseUrl: BASE });
+
+  it('orders nodes, edges and orphans the same regardless of response timing', async () => {
+    const a = await buildWith(issueNumber);
+    const b = await buildWith((id) => 40 - issueNumber(id));
+    expect([...a.nodes.keys()]).toEqual([...b.nodes.keys()]);
+    expect(a.edges).toEqual(b.edges);
+    expect(a.orphanIds).toEqual(b.orphanIds);
+  });
+
+  it('puts the root first, then the rest in natural id order', async () => {
+    const { roadmap } = await build();
+    expect([...roadmap.nodes.keys()]).toEqual([
+      'EP-1', 'EP-2', 'EP-3', 'EP-4', 'EP-5', 'EP-6', 'EP-7', 'EP-8', 'EP-9', 'EXT-10', 'EXT-11', 'OUT-20',
+    ]);
+  });
+
+  it('sorts edges by prerequisite, then dependent', async () => {
+    const { roadmap } = await build();
+    const keys = roadmap.edges.map((e) => [e.from, e.to]);
+    const sorted = [...keys].sort((x, y) => compareIssueIds(x[0], y[0]) || compareIssueIds(x[1], y[1]));
+    expect(keys).toEqual(sorted);
+  });
+});
+
+describe('compareIssueIds', () => {
+  it('compares the project first, then the number numerically', () => {
+    expect(['EP-10', 'EXT-1', 'EP-2', 'AB-30'].sort(compareIssueIds)).toEqual(['AB-30', 'EP-2', 'EP-10', 'EXT-1']);
   });
 });
